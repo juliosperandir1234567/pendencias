@@ -65,6 +65,14 @@ export function FiltrosIndividual({
     });
   }
 
+  const hasFiltros = !!estrutura || !!treinamento || !!qualis || !!turno;
+
+  function limparFiltros() {
+    startTransition(() => {
+      router.replace(pathname, { scroll: false });
+    });
+  }
+
   return (
     <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-5">
       <Field label="Estrutura Macro">
@@ -116,10 +124,21 @@ export function FiltrosIndividual({
           ))}
         </select>
       </Field>
-      {isPending && (
-        <span className="col-span-2 text-xs text-gray-400 lg:col-span-5">
-          Atualizando…
-        </span>
+      {(isPending || hasFiltros) && (
+        <div className="col-span-2 flex items-center justify-between lg:col-span-5">
+          <span className="text-xs text-gray-400">
+            {isPending ? "Atualizando…" : ""}
+          </span>
+          {hasFiltros && (
+            <button
+              type="button"
+              onClick={limparFiltros}
+              className="text-xs font-medium text-brand-azul hover:underline"
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
