@@ -180,6 +180,8 @@ export default async function IndividualDetalhePage({
   if (sp.treinamento) pdfParams.set("treinamento", sp.treinamento);
   if (sp.qualis) pdfParams.set("qualis", sp.qualis);
   if (sp.turno) pdfParams.set("turno", sp.turno);
+  pdfParams.set("sort", sortBy);
+  pdfParams.set("dir", sortDir);
   const pdfHref = `/individual/pdf?${pdfParams.toString()}`;
 
   return (

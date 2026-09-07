@@ -7,6 +7,14 @@ import {
   type LinhaRelatorio,
 } from "@/lib/pdf/relatorio-colaboradores";
 
+const ORDER_WHITELIST = [
+  "matricula",
+  "colaborador",
+  "id_treina",
+  "treinamento",
+  "turno",
+] as const;
+
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
@@ -37,6 +45,10 @@ export async function GET(request: NextRequest) {
         : undefined
     : true;
   const turnoGrupo = isTurnoGrupoKey(sp.get("turno")) ? sp.get("turno")! : undefined;
+  const orderBy = (ORDER_WHITELIST as readonly string[]).includes(sp.get("sort") ?? "")
+    ? (sp.get("sort") as (typeof ORDER_WHITELIST)[number])
+    : "colaborador";
+  const orderDir = sp.get("dir") === "desc" ? "desc" : "asc";
 
   const [{ data: macro }, { data: estrutura }, { data: treinamento }, { data: tabelaRows }] =
     await Promise.all([
@@ -59,8 +71,8 @@ export async function GET(request: NextRequest) {
         p_treinamento_id: treinamentoId,
         p_qualis: qualis,
         p_turno_grupo: turnoGrupo,
-        p_order_by: "colaborador",
-        p_order_dir: "asc",
+        p_order_by: orderBy,
+        p_order_dir: orderDir,
         p_page: 1,
         p_page_size: 50000,
       }),
