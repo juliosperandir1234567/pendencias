@@ -174,10 +174,7 @@ export default async function GeralPage({
       </div>
 
       <div className="space-y-4">
-        <ChartCard
-          title="Pendências por Macro Estrutura"
-          subtitle="Início x Atual — clique numa barra para o detalhamento"
-        >
+        <ChartCard title="Pendências por Macro Estrutura">
           <LegendaInicioAtual />
           <GraficoMacroClicavel dados={dadosMacro} />
         </ChartCard>

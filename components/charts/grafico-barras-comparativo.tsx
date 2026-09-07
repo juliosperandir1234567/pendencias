@@ -45,7 +45,7 @@ export function GraficoBarrasComparativo({
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={dados}
-            margin={{ top: 22, right: 16, bottom: largo ? 54 : 8, left: largo ? 64 : 16 }}
+            margin={{ top: 22, right: 8, bottom: largo ? 54 : 8, left: 8 }}
             barGap={4}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f0" />
@@ -53,7 +53,7 @@ export function GraficoBarrasComparativo({
               dataKey="nome"
               tick={{ fontSize: 10, fill: "#374151" }}
               tickFormatter={(value: string) =>
-                largo && value.length > 11 ? `${value.slice(0, 10)}…` : value
+                largo && value.length > 8 ? `${value.slice(0, 7)}…` : value
               }
               interval={0}
               angle={largo ? -35 : 0}
