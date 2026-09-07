@@ -683,6 +683,13 @@ export type Database = {
           turno: Database["public"]["Enums"]["turno_tipo"]
         }[]
       }
+      rpc_treinamentos_por_estrutura: {
+        Args: { p_estrutura_id?: string }
+        Returns: {
+          id: string
+          nome: string
+        }[]
+      }
       rpc_visao_individual: {
         Args: {
           p_estrutura_id?: string

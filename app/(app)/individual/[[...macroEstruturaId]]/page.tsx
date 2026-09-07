@@ -95,7 +95,9 @@ export default async function IndividualDetalhePage({
       .from("estruturas")
       .select("id, nome, macro_estrutura_id")
       .order("nome"),
-    supabase.from("treinamentos").select("id, nome").order("nome"),
+    supabase.rpc("rpc_treinamentos_por_estrutura", {
+      p_estrutura_id: estruturaId,
+    }),
     supabase.rpc("rpc_grafico_macro_estrutura", {
       p_macro_ids: macroEstruturaId ? [macroEstruturaId] : undefined,
       p_estrutura_id: estruturaId,

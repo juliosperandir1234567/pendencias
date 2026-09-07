@@ -29,7 +29,7 @@ export function SearchableSelect({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (
         containerRef.current &&
         !containerRef.current.contains(event.target as Node)
@@ -38,8 +38,15 @@ export function SearchableSelect({
         setQuery("");
       }
     }
+    // iOS Safari nem sempre dispara "mousedown" ao tocar em elementos não
+    // interativos, então o clique fora não fechava o menu — "touchstart"
+    // cobre esse caso também.
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   const filtered = useMemo(() => {
