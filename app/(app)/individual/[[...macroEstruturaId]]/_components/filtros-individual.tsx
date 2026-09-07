@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TURNO_GRUPOS } from "@/lib/filters";
@@ -21,7 +21,7 @@ interface TreinamentoOption {
 }
 
 interface FiltrosIndividualProps {
-  macroEstruturaId: string;
+  macroEstruturaId?: string;
   macroEstruturas: MacroEstruturaOption[];
   estruturas: EstruturaOption[];
   treinamentos: TreinamentoOption[];
@@ -36,9 +36,12 @@ export function FiltrosIndividual({
   mostrarQualis = true,
 }: FiltrosIndividualProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+
+  const basePath = macroEstruturaId
+    ? `/individual/${macroEstruturaId}`
+    : "/individual";
 
   const estrutura = searchParams.get("estrutura") ?? "";
   const treinamento = searchParams.get("treinamento") ?? "";
@@ -53,17 +56,17 @@ export function FiltrosIndividual({
     }
     params.delete("page");
     startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      router.replace(`${basePath}?${params.toString()}`, { scroll: false });
     });
   }
 
   function trocarMacro(novoId: string | undefined) {
-    if (!novoId || novoId === macroEstruturaId) return;
     const params = new URLSearchParams(searchParams.toString());
     params.delete("estrutura");
     params.delete("page");
+    const destino = novoId ? `/individual/${novoId}` : "/individual";
     startTransition(() => {
-      router.push(`/individual/${novoId}?${params.toString()}`);
+      router.push(`${destino}?${params.toString()}`);
     });
   }
 
@@ -77,9 +80,9 @@ export function FiltrosIndividual({
     <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-5">
       <Field label="Estrutura Macro">
         <SearchableSelect
-          placeholder="Selecione"
+          placeholder="Todas as macro estruturas"
           options={macroEstruturas.map((m) => ({ value: m.id, label: m.nome }))}
-          value={[macroEstruturaId]}
+          value={macroEstruturaId ? [macroEstruturaId] : []}
           onChange={(v) => trocarMacro(v[0])}
         />
       </Field>

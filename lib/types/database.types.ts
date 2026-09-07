@@ -638,7 +638,7 @@ export type Database = {
       rpc_pendencias_por_estrutura_turno: {
         Args: {
           p_estrutura_id?: string
-          p_macro_estrutura_id: string
+          p_macro_estrutura_id?: string
           p_qualis?: boolean
           p_treinamento_id?: string
         }
@@ -653,7 +653,7 @@ export type Database = {
       rpc_pendencias_por_turno: {
         Args: {
           p_estrutura_id?: string
-          p_macro_estrutura_id: string
+          p_macro_estrutura_id?: string
           p_qualis?: boolean
           p_treinamento_id?: string
         }
@@ -665,7 +665,7 @@ export type Database = {
       rpc_tabela_detalhada: {
         Args: {
           p_estrutura_id?: string
-          p_macro_estrutura_id: string
+          p_macro_estrutura_id?: string
           p_order_by?: string
           p_order_dir?: string
           p_page?: number

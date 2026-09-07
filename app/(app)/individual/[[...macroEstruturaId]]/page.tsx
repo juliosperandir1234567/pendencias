@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatNumber } from "@/lib/format";
 import { agruparPorTurno, pivotEstruturaTurno } from "@/lib/transform";
@@ -42,10 +41,11 @@ export default async function IndividualDetalhePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ macroEstruturaId: string }>;
+  params: Promise<{ macroEstruturaId?: string[] }>;
   searchParams: Promise<SearchParamsIndividual>;
 }) {
-  const { macroEstruturaId } = await params;
+  const { macroEstruturaId: macroParam } = await params;
+  const macroEstruturaId = macroParam?.[0];
   const sp = await searchParams;
 
   const estruturaId = sp.estrutura || undefined;
@@ -72,17 +72,9 @@ export default async function IndividualDetalhePage({
     : { data: null };
   const isAdmin = profile?.role === "administrador";
 
-  const { data: macro } = await supabase
-    .from("macro_estruturas")
-    .select("id, nome")
-    .eq("id", macroEstruturaId)
-    .maybeSingle();
-
-  if (!macro) notFound();
-
   const [
     { data: macroEstruturasRaw },
-    { data: estruturasRaw },
+    { data: estruturasTodas },
     { data: treinamentosRaw },
     { data: graficoMacroRaw },
     { data: turnoRows },
@@ -92,12 +84,11 @@ export default async function IndividualDetalhePage({
     supabase.from("macro_estruturas").select("id, nome").order("nome"),
     supabase
       .from("estruturas")
-      .select("id, nome")
-      .eq("macro_estrutura_id", macroEstruturaId)
+      .select("id, nome, macro_estrutura_id")
       .order("nome"),
     supabase.from("treinamentos").select("id, nome").order("nome"),
     supabase.rpc("rpc_grafico_macro_estrutura", {
-      p_macro_ids: [macroEstruturaId],
+      p_macro_ids: macroEstruturaId ? [macroEstruturaId] : undefined,
       p_estrutura_id: estruturaId,
       p_treinamento_id: treinamentoId,
       p_qualis: qualis,
@@ -128,9 +119,26 @@ export default async function IndividualDetalhePage({
     }),
   ]);
 
+  const macroEstruturas = macroEstruturasRaw ?? [];
+  const macro = macroEstruturaId
+    ? macroEstruturas.find((m) => m.id === macroEstruturaId)
+    : undefined;
+
+  const estruturas = macroEstruturaId
+    ? (estruturasTodas ?? []).filter(
+        (e) => e.macro_estrutura_id === macroEstruturaId,
+      )
+    : (estruturasTodas ?? []);
+
   const totalCount = tabelaRows?.[0]?.total_count ?? 0;
-  const totalInicio = graficoMacroRaw?.[0]?.baseline_pendencias ?? 0;
-  const totalAtualEscopo = graficoMacroRaw?.[0]?.atual_pendencias ?? 0;
+  const totalInicio = (graficoMacroRaw ?? []).reduce(
+    (soma, g) => soma + g.baseline_pendencias,
+    0,
+  );
+  const totalAtualEscopo = (graficoMacroRaw ?? []).reduce(
+    (soma, g) => soma + g.atual_pendencias,
+    0,
+  );
   const treinamentosConcluidos = Math.max(0, totalInicio - totalAtualEscopo);
 
   const dadosTurno = agruparPorTurno(turnoRows ?? []);
@@ -151,13 +159,18 @@ export default async function IndividualDetalhePage({
     for (const [key, value] of Object.entries(patch)) {
       urlParams.set(key, value);
     }
-    return `/individual/${macroEstruturaId}?${urlParams.toString()}`;
+    const base = macroEstruturaId
+      ? `/individual/${macroEstruturaId}`
+      : "/individual";
+    return `${base}?${urlParams.toString()}`;
   }
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-brand-verde">{macro.nome}</h2>
+        <h2 className="text-lg font-semibold text-brand-verde">
+          {macro?.nome ?? "Todas as Macro Estruturas"}
+        </h2>
         <p className="text-xs text-gray-500">
           Detalhamento de pendências de treinamento por colaborador.
         </p>
@@ -166,8 +179,8 @@ export default async function IndividualDetalhePage({
       <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
         <FiltrosIndividual
           macroEstruturaId={macroEstruturaId}
-          macroEstruturas={macroEstruturasRaw ?? []}
-          estruturas={estruturasRaw ?? []}
+          macroEstruturas={macroEstruturas}
+          estruturas={estruturas}
           treinamentos={treinamentosRaw ?? []}
           mostrarQualis={isAdmin}
         />
@@ -194,8 +207,8 @@ export default async function IndividualDetalhePage({
           icon={<IconGraduationCap />}
         />
         <KpiCard
-          label="Estruturas nesta Macro"
-          value={formatNumber(estruturasRaw?.length ?? 0)}
+          label={macroEstruturaId ? "Estruturas nesta Macro" : "Estruturas"}
+          value={formatNumber(estruturas.length)}
           accent="azul"
           icon={<IconBuilding />}
         />
