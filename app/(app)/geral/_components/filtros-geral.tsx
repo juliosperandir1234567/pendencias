@@ -154,22 +154,19 @@ export function FiltrosGeral({
           ))}
         </select>
       </div>
-      {(isPending || hasFiltros) && (
-        <div className="col-span-2 flex items-center justify-between lg:col-span-5">
-          <span className="text-xs text-gray-400">
-            {isPending ? "Atualizando…" : ""}
-          </span>
-          {hasFiltros && (
-            <button
-              type="button"
-              onClick={limparFiltros}
-              className="text-xs font-medium text-brand-azul hover:underline"
-            >
-              Limpar filtros
-            </button>
-          )}
-        </div>
-      )}
+      <div className="col-span-2 flex items-center justify-between lg:col-span-5">
+        <span className="text-xs text-gray-400">
+          {isPending ? "Atualizando…" : ""}
+        </span>
+        <button
+          type="button"
+          onClick={limparFiltros}
+          disabled={!hasFiltros}
+          className="text-xs font-medium text-brand-azul hover:underline disabled:text-gray-300 disabled:no-underline"
+        >
+          Limpar filtros
+        </button>
+      </div>
     </div>
   );
 }

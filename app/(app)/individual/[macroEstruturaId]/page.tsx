@@ -91,6 +91,9 @@ export default async function IndividualDetalhePage({
     supabase.rpc("rpc_grafico_macro_estrutura", {
       p_macro_ids: [macroEstruturaId],
       p_estrutura_id: estruturaId,
+      p_treinamento_id: treinamentoId,
+      p_qualis: qualis,
+      p_turno_grupo: turnoGrupo,
     }),
     supabase.rpc("rpc_pendencias_por_turno", {
       p_macro_estrutura_id: macroEstruturaId,
