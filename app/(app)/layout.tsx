@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/login/actions";
 import { IconBuilding } from "@/components/ui/icons";
+import { NavLink } from "./_components/nav-link";
 
 export default async function AppLayout({
   children,
@@ -71,22 +71,5 @@ export default async function AppLayout({
       </header>
       <main className="mx-auto max-w-7xl p-3 sm:p-5">{children}</main>
     </div>
-  );
-}
-
-function NavLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="whitespace-nowrap border-b-2 border-transparent px-2.5 py-2 text-xs font-medium text-emerald-50/80 transition hover:border-brand-verde-claro hover:text-white sm:text-sm"
-    >
-      {children}
-    </Link>
   );
 }

@@ -72,7 +72,7 @@ export function FiltrosGeral({
   }
 
   return (
-    <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-5">
       <div>
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
           Macro Estrutura
@@ -142,7 +142,7 @@ export function FiltrosGeral({
         </select>
       </div>
       {isPending && (
-        <span className="text-xs text-gray-400 sm:col-span-2 lg:col-span-5">
+        <span className="col-span-2 text-xs text-gray-400 lg:col-span-5">
           Atualizando…
         </span>
       )}

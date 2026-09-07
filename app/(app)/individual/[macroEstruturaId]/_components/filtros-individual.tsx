@@ -66,7 +66,7 @@ export function FiltrosIndividual({
   }
 
   return (
-    <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-5">
       <Field label="Estrutura Macro">
         <SearchableSelect
           placeholder="Selecione"
@@ -117,7 +117,7 @@ export function FiltrosIndividual({
         </select>
       </Field>
       {isPending && (
-        <span className="text-xs text-gray-400 sm:col-span-2 lg:col-span-5">
+        <span className="col-span-2 text-xs text-gray-400 lg:col-span-5">
           Atualizando…
         </span>
       )}
