@@ -50,18 +50,17 @@ export function TabelaDetalhada({
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
       <div className="divide-y divide-gray-100 sm:hidden">
         {rows.map((r, i) => (
-          <div key={`${r.matricula}-${r.id_treina}-${i}`} className="px-3 py-2.5">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-medium text-gray-800">{r.colaborador}</p>
-              <span className="flex-shrink-0 text-[11px] text-gray-400">
-                Mat. {r.matricula}
-              </span>
-            </div>
-            <p className="mt-0.5 text-xs text-gray-600">{r.treinamento}</p>
-            <div className="mt-1 flex items-center gap-3 text-[11px] text-gray-400">
-              <span>Id. {r.id_treina}</span>
-              <span>{r.turno ? TURNO_LABELS[r.turno] : "—"}</span>
-            </div>
+          <div
+            key={`${r.matricula}-${r.id_treina}-${i}`}
+            className="space-y-1 px-3 py-2.5"
+          >
+            <CampoCartao label="Matrícula" value={r.matricula} />
+            <CampoCartao label="Colaborador" value={r.colaborador} />
+            <CampoCartao label="Treinamento" value={r.treinamento} />
+            <CampoCartao
+              label="Turno"
+              value={r.turno ? TURNO_LABELS[r.turno] : "—"}
+            />
           </div>
         ))}
         {!rows.length && (
@@ -150,6 +149,17 @@ export function TabelaDetalhada({
           </Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+function CampoCartao({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 text-sm">
+      <span className="text-[11px] uppercase tracking-wide text-gray-400">
+        {label}
+      </span>
+      <span className="text-right text-gray-800">{value}</span>
     </div>
   );
 }
