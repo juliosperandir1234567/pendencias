@@ -43,7 +43,6 @@ export async function criarUsuario(formData: FormData): Promise<ResultadoUsuario
   const email = String(formData.get("email") ?? "").trim();
   const senha = String(formData.get("senha") ?? "");
   const role = String(formData.get("role") ?? "gestor") as Enums<"user_role">;
-  const estruturaIds = formData.getAll("estruturas").map(String).filter(Boolean);
 
   if (!nome || !email || senha.length < 6) {
     return {
@@ -83,15 +82,23 @@ export async function criarUsuario(formData: FormData): Promise<ResultadoUsuario
     return { ok: false, erro: profileError.message };
   }
 
-  if (role === "gestor" && estruturaIds.length) {
-    const { error: vinculoError } = await supabase.from("gestor_estruturas").insert(
-      estruturaIds.map((estrutura_id) => ({
-        gestor_id: created.user.id,
-        estrutura_id,
-      })),
-    );
-    if (vinculoError) {
-      return { ok: false, erro: vinculoError.message };
+  if (role === "gestor") {
+    const { data: todasEstruturas } = await supabase
+      .from("estruturas")
+      .select("id");
+
+    if (todasEstruturas?.length) {
+      const { error: vinculoError } = await supabase
+        .from("gestor_estruturas")
+        .insert(
+          todasEstruturas.map((e) => ({
+            gestor_id: created.user.id,
+            estrutura_id: e.id,
+          })),
+        );
+      if (vinculoError) {
+        return { ok: false, erro: vinculoError.message };
+      }
     }
   }
 

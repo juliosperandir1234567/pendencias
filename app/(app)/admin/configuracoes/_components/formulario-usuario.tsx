@@ -1,35 +1,22 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import { criarUsuario, type ResultadoUsuario } from "../actions";
 
-interface EstruturaOption {
-  id: string;
-  nome: string;
-}
-
-export function FormularioUsuario({
-  estruturas,
-}: {
-  estruturas: EstruturaOption[];
-}) {
+export function FormularioUsuario() {
   const [isPending, startTransition] = useTransition();
   const [resultado, setResultado] = useState<ResultadoUsuario | null>(null);
   const [role, setRole] = useState<"gestor" | "administrador">("gestor");
-  const [estruturaIds, setEstruturaIds] = useState<string[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
 
   function enviar(formData: FormData) {
     formData.set("role", role);
-    estruturaIds.forEach((id) => formData.append("estruturas", id));
     startTransition(async () => {
       const res = await criarUsuario(formData);
       setResultado(res);
       if (res.ok) {
         formRef.current?.reset();
         setRole("gestor");
-        setEstruturaIds([]);
       }
     });
   }
@@ -88,18 +75,10 @@ export function FormularioUsuario({
       </div>
 
       {role === "gestor" && (
-        <div>
-          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
-            Estruturas que este gestor pode ver
-          </label>
-          <SearchableSelect
-            multiple
-            placeholder="Selecione as estruturas"
-            options={estruturas.map((e) => ({ value: e.id, label: e.nome }))}
-            value={estruturaIds}
-            onChange={setEstruturaIds}
-          />
-        </div>
+        <p className="text-xs text-gray-400">
+          O gestor vê todas as estruturas cadastradas (só sem o filtro Qualis
+          e sem acesso a Importar/Configurações).
+        </p>
       )}
 
       <button

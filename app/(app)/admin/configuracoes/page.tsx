@@ -18,14 +18,13 @@ export default async function ConfiguracoesPage() {
     .single();
   if (profile?.role !== "administrador") redirect("/geral");
 
-  const [{ data: config }, { data: estruturas }, { data: usuarios }, { data: vinculos }] =
+  const [{ data: config }, { data: usuarios }, { data: vinculos }] =
     await Promise.all([
       supabase
         .from("configuracoes_sistema")
         .select("logo_atualizado_em")
         .eq("id", true)
         .maybeSingle(),
-      supabase.from("estruturas").select("id, nome").order("nome"),
       supabase
         .from("profiles")
         .select("id, nome, email, role, created_at")
@@ -83,7 +82,7 @@ export default async function ConfiguracoesPage() {
         <h3 className="mb-4 text-sm font-semibold text-gray-700">
           Criar novo usuário
         </h3>
-        <FormularioUsuario estruturas={estruturas ?? []} />
+        <FormularioUsuario />
       </div>
     </div>
   );
