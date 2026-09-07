@@ -73,13 +73,6 @@ export function FiltrosGeral({
     });
   }
 
-  const hasFiltros =
-    macroSelecionadas.length > 0 ||
-    estruturaSelecionada.length > 0 ||
-    treinamentoSelecionado.length > 0 ||
-    !!qualis ||
-    !!turno;
-
   function limparFiltros() {
     startTransition(() => {
       router.replace(pathname, { scroll: false });
@@ -165,8 +158,7 @@ export function FiltrosGeral({
         <button
           type="button"
           onClick={limparFiltros}
-          disabled={!hasFiltros}
-          className="text-xs font-medium text-brand-azul hover:underline disabled:text-gray-300 disabled:no-underline"
+          className="text-xs font-medium text-brand-azul hover:underline"
         >
           Limpar filtros
         </button>

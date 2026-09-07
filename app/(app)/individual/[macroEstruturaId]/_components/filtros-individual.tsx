@@ -67,11 +67,9 @@ export function FiltrosIndividual({
     });
   }
 
-  const hasFiltros = !!estrutura || !!treinamento || !!qualis || !!turno;
-
   function limparFiltros() {
     startTransition(() => {
-      router.replace(pathname, { scroll: false });
+      router.push("/individual");
     });
   }
 
@@ -135,8 +133,7 @@ export function FiltrosIndividual({
         <button
           type="button"
           onClick={limparFiltros}
-          disabled={!hasFiltros}
-          className="text-xs font-medium text-brand-azul hover:underline disabled:text-gray-300 disabled:no-underline"
+          className="text-xs font-medium text-brand-azul hover:underline"
         >
           Limpar filtros
         </button>
