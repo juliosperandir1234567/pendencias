@@ -52,9 +52,9 @@ export function GraficoEstruturaTurno({
             data={dados}
             margin={{
               top: 16,
-              right: 12,
+              right: 8,
               bottom: 4,
-              left: dados.length > 4 ? 38 : 12,
+              left: 8,
             }}
             barGap={4}
           >
@@ -72,11 +72,7 @@ export function GraficoEstruturaTurno({
               textAnchor={dados.length > 4 ? "end" : "middle"}
               height={dados.length > 4 ? 56 : 30}
             />
-            <YAxis
-              type="number"
-              tick={{ fontSize: 11, fill: "#6b7280" }}
-              allowDecimals={false}
-            />
+            <YAxis hide type="number" allowDecimals={false} />
             <Tooltip
               formatter={(value, name) => [
                 formatNumber(Number(value ?? 0)),

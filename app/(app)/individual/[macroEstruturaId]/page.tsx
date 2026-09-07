@@ -211,14 +211,7 @@ export default async function IndividualDetalhePage({
         >
           <GraficoTurnoDonut dados={dadosTurno} />
         </ChartCard>
-        <ChartCard
-          title="Pendências por Estrutura"
-          subtitle={
-            estruturaId
-              ? "Estrutura selecionada, por turno"
-              : "Todas as estruturas desta macro estrutura, por turno"
-          }
-        >
+        <ChartCard title="Pendências por Estrutura">
           <GraficoEstruturaTurno
             dados={pivotEstruturaTurno(estruturaTurnoRows ?? [])}
           />
