@@ -32,7 +32,6 @@ export default async function GeralPage({
   const macroIds = parseIdsParam(sp.macro);
   const estruturaId = parseIdsParam(sp.estrutura)[0];
   const treinamentoId = parseIdsParam(sp.treinamento)[0];
-  const qualis = sp.qualis === "sim" ? true : sp.qualis === "nao" ? false : undefined;
   const turnoGrupo: string | undefined = isTurnoGrupoKey(sp.turno)
     ? sp.turno
     : undefined;
@@ -46,6 +45,15 @@ export default async function GeralPage({
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null };
   const isAdmin = profile?.role === "administrador";
+
+  // Gestor só vê Qualis = Sim, travado (mesmo que tente forçar via URL).
+  const qualis = isAdmin
+    ? sp.qualis === "sim"
+      ? true
+      : sp.qualis === "nao"
+        ? false
+        : undefined
+    : true;
 
   const [
     { data: macroEstruturasRaw },
@@ -134,7 +142,7 @@ export default async function GeralPage({
           macroEstruturas={macroEstruturas}
           estruturas={estruturas}
           treinamentos={treinamentos}
-          mostrarQualis={isAdmin}
+          qualisTravado={!isAdmin}
         />
       </div>
 

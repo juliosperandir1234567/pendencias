@@ -25,7 +25,7 @@ interface FiltrosIndividualProps {
   macroEstruturas: MacroEstruturaOption[];
   estruturas: EstruturaOption[];
   treinamentos: TreinamentoOption[];
-  mostrarQualis?: boolean;
+  qualisTravado?: boolean;
 }
 
 export function FiltrosIndividual({
@@ -33,7 +33,7 @@ export function FiltrosIndividual({
   macroEstruturas,
   estruturas,
   treinamentos,
-  mostrarQualis = true,
+  qualisTravado = false,
 }: FiltrosIndividualProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -102,19 +102,18 @@ export function FiltrosIndividual({
           onChange={(v) => update({ treinamento: v[0] ?? null })}
         />
       </Field>
-      {mostrarQualis && (
-        <Field label="Qualis">
-          <select
-            value={qualis}
-            onChange={(e) => update({ qualis: e.target.value || null })}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none"
-          >
-            <option value="">Todos</option>
-            <option value="sim">Sim</option>
-            <option value="nao">Não</option>
-          </select>
-        </Field>
-      )}
+      <Field label="Qualis">
+        <select
+          value={qualisTravado ? "sim" : qualis}
+          disabled={qualisTravado}
+          onChange={(e) => update({ qualis: e.target.value || null })}
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
+        >
+          <option value="">Todos</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+      </Field>
       <Field label="Turno">
         <select
           value={turno}

@@ -50,7 +50,6 @@ export default async function IndividualDetalhePage({
 
   const estruturaId = sp.estrutura || undefined;
   const treinamentoId = sp.treinamento || undefined;
-  const qualis = sp.qualis === "sim" ? true : sp.qualis === "nao" ? false : undefined;
   const turnoGrupo: string | undefined = isTurnoGrupoKey(sp.turno)
     ? sp.turno
     : undefined;
@@ -71,6 +70,15 @@ export default async function IndividualDetalhePage({
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null };
   const isAdmin = profile?.role === "administrador";
+
+  // Gestor só vê Qualis = Sim, travado (mesmo que tente forçar via URL).
+  const qualis = isAdmin
+    ? sp.qualis === "sim"
+      ? true
+      : sp.qualis === "nao"
+        ? false
+        : undefined
+    : true;
 
   const [
     { data: macroEstruturasRaw },
@@ -182,7 +190,7 @@ export default async function IndividualDetalhePage({
           macroEstruturas={macroEstruturas}
           estruturas={estruturas}
           treinamentos={treinamentosRaw ?? []}
-          mostrarQualis={isAdmin}
+          qualisTravado={!isAdmin}
         />
       </div>
 
