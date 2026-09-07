@@ -48,7 +48,29 @@ export function TabelaDetalhada({
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-      <div className="overflow-x-auto">
+      <div className="divide-y divide-gray-100 sm:hidden">
+        {rows.map((r, i) => (
+          <div key={`${r.matricula}-${r.id_treina}-${i}`} className="px-3 py-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm font-medium text-gray-800">{r.colaborador}</p>
+              <span className="flex-shrink-0 text-[11px] text-gray-400">
+                Mat. {r.matricula}
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs text-gray-600">{r.treinamento}</p>
+            <div className="mt-1 flex items-center gap-3 text-[11px] text-gray-400">
+              <span>Id. {r.id_treina}</span>
+              <span>{r.turno ? TURNO_LABELS[r.turno] : "—"}</span>
+            </div>
+          </div>
+        ))}
+        {!rows.length && (
+          <p className="px-3 py-8 text-center text-sm text-gray-400">
+            Nenhuma pendência encontrada para os filtros selecionados.
+          </p>
+        )}
+      </div>
+      <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
             <tr>
