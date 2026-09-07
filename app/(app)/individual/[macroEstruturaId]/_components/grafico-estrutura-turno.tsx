@@ -43,7 +43,7 @@ export function GraficoEstruturaTurno({
       <div className="overflow-x-auto px-2">
         <div
           style={{
-            height: 220,
+            height: 170,
             minWidth: dados.length > 6 ? dados.length * 90 : "100%",
           }}
         >

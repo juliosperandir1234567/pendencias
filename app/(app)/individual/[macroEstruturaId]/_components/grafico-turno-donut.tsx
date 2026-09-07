@@ -18,14 +18,14 @@ export function GraficoTurnoDonut({ dados }: { dados: TurnoGrupoTotal[] }) {
   return (
     <div>
       <div className="relative">
-        <ResponsiveContainer width="100%" height={170}>
+        <ResponsiveContainer width="100%" height={140}>
           <PieChart>
             <Pie
               data={dados}
               dataKey="total"
               nameKey="label"
-              innerRadius={46}
-              outerRadius={68}
+              innerRadius={38}
+              outerRadius={56}
               paddingAngle={2}
               strokeWidth={0}
             >
@@ -53,13 +53,13 @@ export function GraficoTurnoDonut({ dados }: { dados: TurnoGrupoTotal[] }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-brand-verde">
+          <span className="text-lg font-bold text-brand-verde">
             {formatNumber(total)}
           </span>
-          <span className="text-xs text-gray-400">pendências</span>
+          <span className="text-[10px] text-gray-400">pendências</span>
         </div>
       </div>
-      <ul className="mt-4 grid grid-cols-2 gap-2 text-xs">
+      <ul className="mt-2 grid grid-cols-2 gap-1.5 text-xs">
         {dados.map((d) => (
           <li key={d.key} className="flex items-center gap-2">
             <span

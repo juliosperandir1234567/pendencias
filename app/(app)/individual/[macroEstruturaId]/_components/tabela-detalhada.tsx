@@ -48,23 +48,51 @@ export function TabelaDetalhada({
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-      <div className="divide-y divide-gray-100 sm:hidden">
-        {rows.map((r, i) => (
-          <div
-            key={`${r.matricula}-${r.id_treina}-${i}`}
-            className="space-y-1 px-3 py-2.5"
-          >
-            <CampoCartao label="Matrícula" value={r.matricula} />
-            <CampoCartao label="Colaborador" value={r.colaborador} />
-            <CampoCartao label="Id. Treina" value={r.id_treina} />
-            <CampoCartao label="Treinamento" value={r.treinamento} />
-          </div>
-        ))}
-        {!rows.length && (
-          <p className="px-3 py-8 text-center text-sm text-gray-400">
-            Nenhuma pendência encontrada para os filtros selecionados.
-          </p>
-        )}
+      <div className="overflow-x-auto sm:hidden">
+        <table className="w-full text-left text-[11px]">
+          <thead className="bg-gray-50 uppercase tracking-wide text-gray-500">
+            <tr>
+              {COLUNAS.filter((col) => col.key !== "turno").map((col) => {
+                const active = sortBy === col.key;
+                const nextDir = active && sortDir === "asc" ? "desc" : "asc";
+                return (
+                  <th key={col.key} className="whitespace-nowrap px-2 py-2 font-medium">
+                    <Link
+                      href={buildHref({ sort: col.key, dir: nextDir })}
+                      className="inline-flex items-center gap-1 hover:text-brand-verde"
+                    >
+                      {col.label}
+                      {active && (
+                        <span className="text-brand-verde-claro">
+                          {sortDir === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </Link>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {rows.map((r, i) => (
+              <tr key={`${r.matricula}-${r.id_treina}-${i}`}>
+                <td className="px-2 py-1.5 font-medium text-gray-700">
+                  {r.matricula}
+                </td>
+                <td className="px-2 py-1.5 text-gray-600">{r.colaborador}</td>
+                <td className="px-2 py-1.5 text-gray-500">{r.id_treina}</td>
+                <td className="px-2 py-1.5 text-gray-600">{r.treinamento}</td>
+              </tr>
+            ))}
+            {!rows.length && (
+              <tr>
+                <td colSpan={4} className="px-2 py-8 text-center text-gray-400">
+                  Nenhuma pendência encontrada para os filtros selecionados.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
       <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-left text-sm">
@@ -146,17 +174,6 @@ export function TabelaDetalhada({
           </Link>
         </div>
       </div>
-    </div>
-  );
-}
-
-function CampoCartao({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 text-sm">
-      <span className="text-[11px] uppercase tracking-wide text-gray-400">
-        {label}
-      </span>
-      <span className="text-right text-gray-800">{value}</span>
     </div>
   );
 }
