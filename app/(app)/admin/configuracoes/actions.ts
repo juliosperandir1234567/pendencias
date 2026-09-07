@@ -188,3 +188,71 @@ export async function uploadLogo(formData: FormData): Promise<ResultadoLogo> {
 
   return { ok: true };
 }
+
+const TAMANHO_MAXIMO_BG = 5 * 1024 * 1024; // 5MB
+
+export async function uploadLoginBg(formData: FormData): Promise<ResultadoLogo> {
+  const check = await exigirAdmin();
+  if (!check.ok) return check;
+  const { supabase } = check;
+
+  const file = formData.get("arquivo");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, erro: "Selecione uma imagem." };
+  }
+
+  if (!TIPOS_ACEITOS.includes(file.type)) {
+    return {
+      ok: false,
+      erro: "Formato não suportado. Envie PNG, JPG, SVG ou WEBP.",
+    };
+  }
+
+  if (file.size > TAMANHO_MAXIMO_BG) {
+    return { ok: false, erro: "A imagem deve ter no máximo 5MB." };
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from("sistema-assets")
+    .upload("login-bg/current", file, { upsert: true, contentType: file.type });
+
+  if (uploadError) {
+    return { ok: false, erro: uploadError.message };
+  }
+
+  const { error: updateError } = await supabase
+    .from("configuracoes_sistema")
+    .update({ login_bg_atualizado_em: new Date().toISOString() })
+    .eq("id", true);
+
+  if (updateError) {
+    return { ok: false, erro: updateError.message };
+  }
+
+  revalidatePath("/login");
+  revalidatePath("/admin/configuracoes");
+
+  return { ok: true };
+}
+
+export async function removerLoginBg(): Promise<ResultadoLogo> {
+  const check = await exigirAdmin();
+  if (!check.ok) return check;
+  const { supabase } = check;
+
+  await supabase.storage.from("sistema-assets").remove(["login-bg/current"]);
+
+  const { error: updateError } = await supabase
+    .from("configuracoes_sistema")
+    .update({ login_bg_atualizado_em: null })
+    .eq("id", true);
+
+  if (updateError) {
+    return { ok: false, erro: updateError.message };
+  }
+
+  revalidatePath("/login");
+  revalidatePath("/admin/configuracoes");
+
+  return { ok: true };
+}

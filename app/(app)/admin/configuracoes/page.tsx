@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { FormularioLogo } from "./_components/formulario-logo";
+import { FormularioLoginBg } from "./_components/formulario-login-bg";
 import { FormularioUsuario } from "./_components/formulario-usuario";
 import { ListaUsuarios } from "./_components/lista-usuarios";
 
@@ -22,7 +23,7 @@ export default async function ConfiguracoesPage() {
     await Promise.all([
       supabase
         .from("configuracoes_sistema")
-        .select("logo_atualizado_em")
+        .select("logo_atualizado_em, login_bg_atualizado_em")
         .eq("id", true)
         .maybeSingle(),
       supabase
@@ -37,6 +38,14 @@ export default async function ConfiguracoesPage() {
         supabase.storage.from("sistema-assets").getPublicUrl("logo/current")
           .data.publicUrl
       }?v=${new Date(config.logo_atualizado_em).getTime()}`
+    : null;
+
+  const loginBgUrl = config?.login_bg_atualizado_em
+    ? `${
+        supabase.storage
+          .from("sistema-assets")
+          .getPublicUrl("login-bg/current").data.publicUrl
+      }?v=${new Date(config.login_bg_atualizado_em).getTime()}`
     : null;
 
   const estruturasPorGestor = new Map<string, number>();
@@ -63,6 +72,13 @@ export default async function ConfiguracoesPage() {
           Logo do sistema
         </h3>
         <FormularioLogo logoAtual={logoUrl} />
+      </div>
+
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-sm font-semibold text-gray-700">
+          Fundo de tela do login
+        </h3>
+        <FormularioLoginBg bgAtual={loginBgUrl} />
       </div>
 
       <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">

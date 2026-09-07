@@ -210,14 +210,17 @@ export type Database = {
       configuracoes_sistema: {
         Row: {
           id: boolean
+          login_bg_atualizado_em: string | null
           logo_atualizado_em: string | null
         }
         Insert: {
           id?: boolean
+          login_bg_atualizado_em?: string | null
           logo_atualizado_em?: string | null
         }
         Update: {
           id?: boolean
+          login_bg_atualizado_em?: string | null
           logo_atualizado_em?: string | null
         }
         Relationships: []
