@@ -106,6 +106,7 @@ export default async function GeralPage({
   const variacao =
     totalInicio > 0 ? ((totalAtual - totalInicio) / totalInicio) * 100 : null;
   const melhorou = variacao !== null && variacao <= 0;
+  const treinamentosConcluidos = Math.max(0, totalInicio - totalAtual);
   const estruturasAfetadas = dadosEstruturaCompletos.filter(
     (item) => item.atual > 0,
   ).length;
@@ -160,8 +161,9 @@ export default async function GeralPage({
         />
         <KpiCard
           label="Treinamentos Concluídos"
-          value={formatNumber(indicadores?.total_concluidos ?? 0)}
-          accent="muted"
+          value={formatNumber(treinamentosConcluidos)}
+          accent="verde"
+          hint="Início − Atual"
           icon={<IconGraduationCap />}
         />
         <KpiCard
