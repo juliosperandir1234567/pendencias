@@ -39,6 +39,14 @@ export default async function GeralPage({
 
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null };
+  const isAdmin = profile?.role === "administrador";
+
   const [
     { data: macroEstruturasRaw },
     { data: estruturasRaw },
@@ -126,6 +134,7 @@ export default async function GeralPage({
           macroEstruturas={macroEstruturas}
           estruturas={estruturas}
           treinamentos={treinamentos}
+          mostrarQualis={isAdmin}
         />
       </div>
 

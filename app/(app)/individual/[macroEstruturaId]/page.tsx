@@ -64,6 +64,14 @@ export default async function IndividualDetalhePage({
 
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null };
+  const isAdmin = profile?.role === "administrador";
+
   const { data: macro } = await supabase
     .from("macro_estruturas")
     .select("id, nome")
@@ -161,6 +169,7 @@ export default async function IndividualDetalhePage({
           macroEstruturas={macroEstruturasRaw ?? []}
           estruturas={estruturasRaw ?? []}
           treinamentos={treinamentosRaw ?? []}
+          mostrarQualis={isAdmin}
         />
       </div>
 

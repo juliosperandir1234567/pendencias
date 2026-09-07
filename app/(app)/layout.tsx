@@ -24,14 +24,35 @@ export default async function AppLayout({
     .eq("id", user.id)
     .single();
 
+  const { data: config } = await supabase
+    .from("configuracoes_sistema")
+    .select("logo_atualizado_em")
+    .eq("id", true)
+    .maybeSingle();
+
+  const logoUrl = config?.logo_atualizado_em
+    ? `${
+        supabase.storage.from("sistema-assets").getPublicUrl("logo/current")
+          .data.publicUrl
+      }?v=${new Date(config.logo_atualizado_em).getTime()}`
+    : null;
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-gray-50">
       <header className="bg-brand-verde text-white shadow-sm">
         <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-3 py-2.5 sm:px-6">
-          {/* Logo da usina: troque este bloco por <img src="/logo.png" ... /> quando tiver o arquivo. */}
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
-              <IconBuilding className="h-5 w-5 text-white" />
+            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <IconBuilding className="h-5 w-5 text-white" />
+              )}
             </span>
             <p className="hidden text-[10px] uppercase tracking-widest text-emerald-100/80 sm:block">
               Usina
@@ -64,7 +85,10 @@ export default async function AppLayout({
             <NavLink href="/geral">Visão Geral</NavLink>
             <NavLink href="/individual">Visão Individual</NavLink>
             {profile?.role === "administrador" && (
-              <NavLink href="/admin/importar">Importar</NavLink>
+              <>
+                <NavLink href="/admin/importar">Importar</NavLink>
+                <NavLink href="/admin/configuracoes">Configurações</NavLink>
+              </>
             )}
           </div>
         </nav>

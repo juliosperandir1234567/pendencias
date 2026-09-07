@@ -25,12 +25,14 @@ interface FiltrosGeralProps {
   macroEstruturas: MacroEstruturaOption[];
   estruturas: EstruturaOption[];
   treinamentos: TreinamentoOption[];
+  mostrarQualis?: boolean;
 }
 
 export function FiltrosGeral({
   macroEstruturas,
   estruturas,
   treinamentos,
+  mostrarQualis = true,
 }: FiltrosGeralProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -123,20 +125,22 @@ export function FiltrosGeral({
           onChange={(v) => updateParams({ treinamento: v })}
         />
       </div>
-      <div>
-        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
-          Qualis
-        </label>
-        <select
-          value={qualis}
-          onChange={(e) => updateScalar("qualis", e.target.value || null)}
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none"
-        >
-          <option value="">Todos</option>
-          <option value="sim">Sim</option>
-          <option value="nao">Não</option>
-        </select>
-      </div>
+      {mostrarQualis && (
+        <div>
+          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
+            Qualis
+          </label>
+          <select
+            value={qualis}
+            onChange={(e) => updateScalar("qualis", e.target.value || null)}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none"
+          >
+            <option value="">Todos</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+      )}
       <div>
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
           Turno

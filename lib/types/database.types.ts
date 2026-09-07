@@ -207,6 +207,21 @@ export type Database = {
           },
         ]
       }
+      configuracoes_sistema: {
+        Row: {
+          id: boolean
+          logo_atualizado_em: string | null
+        }
+        Insert: {
+          id?: boolean
+          logo_atualizado_em?: string | null
+        }
+        Update: {
+          id?: boolean
+          logo_atualizado_em?: string | null
+        }
+        Relationships: []
+      }
       estruturas: {
         Row: {
           codigo: string
