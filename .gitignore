@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.env*.local
+npm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
+
+# scripts de apoio pontuais (não fazem parte do app)
+_gerar_baseline_detalhe.mjs
+_inspect_baseline.mjs
+_inspect_baseline2.mjs
