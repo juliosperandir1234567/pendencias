@@ -7,6 +7,7 @@ import { ChartCard } from "@/components/ui/chart-card";
 import {
   IconBuilding,
   IconClock,
+  IconDownload,
   IconFlag,
   IconGraduationCap,
   IconUsers,
@@ -173,6 +174,14 @@ export default async function IndividualDetalhePage({
     return `${base}?${urlParams.toString()}`;
   }
 
+  const pdfParams = new URLSearchParams();
+  if (macroEstruturaId) pdfParams.set("macro", macroEstruturaId);
+  if (sp.estrutura) pdfParams.set("estrutura", sp.estrutura);
+  if (sp.treinamento) pdfParams.set("treinamento", sp.treinamento);
+  if (sp.qualis) pdfParams.set("qualis", sp.qualis);
+  if (sp.turno) pdfParams.set("turno", sp.turno);
+  const pdfHref = `/individual/pdf?${pdfParams.toString()}`;
+
   return (
     <div className="space-y-4">
       <div>
@@ -252,9 +261,18 @@ export default async function IndividualDetalhePage({
       </div>
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-gray-700">
-          Detalhamento por Colaborador
-        </h3>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-gray-700">
+            Detalhamento por Colaborador
+          </h3>
+          <a
+            href={pdfHref}
+            className="flex items-center gap-1.5 rounded-lg bg-brand-verde px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-verde-claro"
+          >
+            <IconDownload className="h-3.5 w-3.5" />
+            Exportar PDF
+          </a>
+        </div>
         <TabelaDetalhada
           rows={(tabelaRows ?? []).map((r) => ({
             matricula: r.matricula,
