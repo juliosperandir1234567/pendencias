@@ -51,10 +51,10 @@ export function GraficoEstruturaTurno({
           <BarChart
             data={dados}
             margin={{
-              top: 20,
-              right: 16,
+              top: 16,
+              right: 12,
               bottom: 4,
-              left: dados.length > 4 ? 56 : 16,
+              left: dados.length > 4 ? 38 : 12,
             }}
             barGap={4}
           >
@@ -63,8 +63,8 @@ export function GraficoEstruturaTurno({
               dataKey="nome"
               tick={{ fontSize: 10, fill: "#374151" }}
               tickFormatter={(value: string) =>
-                dados.length > 4 && value.length > 11
-                  ? `${value.slice(0, 10)}…`
+                dados.length > 4 && value.length > 8
+                  ? `${value.slice(0, 7)}…`
                   : value
               }
               interval={0}

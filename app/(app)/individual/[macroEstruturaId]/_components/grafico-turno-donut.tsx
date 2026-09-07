@@ -16,16 +16,16 @@ export function GraficoTurnoDonut({ dados }: { dados: TurnoGrupoTotal[] }) {
   }
 
   return (
-    <div>
-      <div className="relative">
-        <ResponsiveContainer width="100%" height={140}>
+    <div className="flex items-center gap-4">
+      <div className="relative h-[120px] w-[120px] flex-shrink-0">
+        <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={dados}
               dataKey="total"
               nameKey="label"
-              innerRadius={38}
-              outerRadius={56}
+              innerRadius={34}
+              outerRadius={52}
               paddingAngle={2}
               strokeWidth={0}
             >
@@ -53,17 +53,17 @@ export function GraficoTurnoDonut({ dados }: { dados: TurnoGrupoTotal[] }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-lg font-bold text-brand-verde">
+          <span className="text-base font-bold text-brand-verde">
             {formatNumber(total)}
           </span>
-          <span className="text-[10px] text-gray-400">pendências</span>
+          <span className="text-[9px] text-gray-400">pendências</span>
         </div>
       </div>
-      <ul className="mt-2 grid grid-cols-2 gap-1.5 text-xs">
+      <ul className="flex-1 space-y-1.5 text-xs">
         {dados.map((d) => (
           <li key={d.key} className="flex items-center gap-2">
             <span
-              className="h-2.5 w-2.5 rounded-full"
+              className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
               style={{ backgroundColor: d.color }}
             />
             <span className="text-gray-600">{d.label}</span>
