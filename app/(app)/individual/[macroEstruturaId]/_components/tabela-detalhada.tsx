@@ -56,11 +56,8 @@ export function TabelaDetalhada({
           >
             <CampoCartao label="Matrícula" value={r.matricula} />
             <CampoCartao label="Colaborador" value={r.colaborador} />
+            <CampoCartao label="Id. Treina" value={r.id_treina} />
             <CampoCartao label="Treinamento" value={r.treinamento} />
-            <CampoCartao
-              label="Turno"
-              value={r.turno ? TURNO_LABELS[r.turno] : "—"}
-            />
           </div>
         ))}
         {!rows.length && (

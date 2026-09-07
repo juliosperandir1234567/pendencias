@@ -18,14 +18,14 @@ export function GraficoTurnoDonut({ dados }: { dados: TurnoGrupoTotal[] }) {
   return (
     <div>
       <div className="relative">
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={170}>
           <PieChart>
             <Pie
               data={dados}
               dataKey="total"
               nameKey="label"
-              innerRadius={62}
-              outerRadius={92}
+              innerRadius={46}
+              outerRadius={68}
               paddingAngle={2}
               strokeWidth={0}
             >
