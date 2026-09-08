@@ -29,12 +29,14 @@ const PILL_CLASSES: Record<NrStatus, string> = {
   em_dia: "bg-emerald-50 text-emerald-700",
   a_vencer: "bg-amber-50 text-amber-700",
   vencido: "bg-red-50 text-red-700",
+  aberta_solicitacao: "bg-blue-50 text-blue-700",
 };
 
 const DOT_CLASSES: Record<NrStatus, string> = {
   em_dia: "bg-emerald-500",
   a_vencer: "bg-amber-500",
   vencido: "bg-red-500",
+  aberta_solicitacao: "bg-blue-500",
 };
 
 function StatusPill({ status }: { status: string }) {

@@ -9,11 +9,18 @@ import {
   IconClipboardList,
   IconClock,
   IconDownload,
+  IconFlag,
   IconUpload,
   IconUsers,
 } from "@/components/ui/icons";
+import { ChartCard } from "@/components/ui/chart-card";
 import { FiltrosNr } from "./_components/filtros-nr";
 import { TabelaNr } from "./_components/tabela-nr";
+import {
+  GraficoNrMacro,
+  LegendaStatusNr,
+} from "./_components/grafico-nr-macro";
+import { GraficoNrStatusDonut } from "./_components/grafico-nr-status-donut";
 
 const ORDER_WHITELIST = [
   "matricula",
@@ -76,6 +83,7 @@ export default async function EspelhoNrPage({
     { data: treinamentosRaw },
     { data: statusAdmRaw },
     { data: statusRaw },
+    { data: graficoMacroRaw },
     { data: tabelaRows },
   ] = await Promise.all([
     supabase.from("macro_estruturas").select("id, nome").order("nome"),
@@ -86,6 +94,13 @@ export default async function EspelhoNrPage({
     supabase.from("nr_treinamentos").select("id, nome").order("nome"),
     supabase.rpc("rpc_espelho_nr_status_adm_opcoes"),
     supabase.rpc("rpc_espelho_nr_status", {
+      p_macro_ids: macroId ? [macroId] : undefined,
+      p_estrutura_id: estruturaId,
+      p_treinamento_id: treinamentoId,
+      p_status_adm: statusAdm,
+      p_exame: exame,
+    }),
+    supabase.rpc("rpc_grafico_nr_macro_estrutura", {
       p_macro_ids: macroId ? [macroId] : undefined,
       p_estrutura_id: estruturaId,
       p_treinamento_id: treinamentoId,
@@ -108,6 +123,23 @@ export default async function EspelhoNrPage({
 
   const contagem = statusRaw?.[0];
   const totalCount = tabelaRows?.[0]?.total_count ?? 0;
+  const dadosGraficoMacro = (graficoMacroRaw ?? [])
+    .map((g) => ({
+      id: g.macro_estrutura_id,
+      nome: g.nome,
+      em_dia: g.em_dia,
+      a_vencer: g.a_vencer,
+      vencido: g.vencido,
+      aberta_solicitacao: g.aberta_solicitacao,
+    }))
+    .sort(
+      (a, b) =>
+        b.em_dia +
+        b.a_vencer +
+        b.vencido +
+        b.aberta_solicitacao -
+        (a.em_dia + a.a_vencer + a.vencido + a.aberta_solicitacao),
+    );
 
   function buildHref(patch: Record<string, string>) {
     const urlParams = new URLSearchParams();
@@ -177,7 +209,7 @@ export default async function EspelhoNrPage({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard
           label="Em Dia"
           value={formatNumber(contagem?.em_dia ?? 0)}
@@ -198,9 +230,15 @@ export default async function EspelhoNrPage({
           icon={<IconAlertTriangle />}
         />
         <KpiCard
+          label="Aberta Solicitação"
+          value={formatNumber(contagem?.aberta_solicitacao ?? 0)}
+          accent="azul"
+          icon={<IconFlag />}
+        />
+        <KpiCard
           label="Afastados"
           value={formatNumber(contagem?.afastados ?? 0)}
-          accent="azul"
+          accent="muted"
           icon={<IconUsers />}
         />
         <KpiCard
@@ -209,6 +247,23 @@ export default async function EspelhoNrPage({
           accent="muted"
           icon={<IconClipboardList />}
         />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+        <div className="lg:col-span-2">
+          <ChartCard title="Status Geral" subtitle="Distribuição por situação">
+            <GraficoNrStatusDonut contagem={contagem} />
+          </ChartCard>
+        </div>
+        <div className="lg:col-span-3">
+          <ChartCard
+            title="NR por Macro Estrutura"
+            subtitle="Situação dos treinamentos, por área"
+          >
+            <LegendaStatusNr />
+            <GraficoNrMacro dados={dadosGraficoMacro} />
+          </ChartCard>
+        </div>
       </div>
 
       <TabelaNr

@@ -14,6 +14,7 @@ export interface RegistroNrLinha {
   data_vencimento: string;
   status_adm: string;
   exame: "S" | "N" | "";
+  status_venc: string;
 }
 
 export interface TreinamentoNrLinha {
@@ -62,6 +63,17 @@ const COLUNAS_DATA_REALIZACAO = [
 ];
 const COLUNAS_STATUS_ADM = ["status adm", "status administrativo"];
 const COLUNAS_EXAME = ["exame"];
+const COLUNAS_STATUS_VENC = ["status venc", "status vencimento", "status"];
+
+// Valores da coluna STATUS_VENC da planilha, mapeados para as chaves internas
+// usadas pelo painel (ver lib/nr.ts). "SEM TREINAMENTO" não entra aqui pois
+// essas linhas já são descartadas antes (nenhuma data de vencimento válida).
+const STATUS_VENC_MAP: Record<string, string> = {
+  "EM DIA": "em_dia",
+  "A VENCER": "a_vencer",
+  VENCIDO: "vencido",
+  "ABERTA SOLICITACAO": "aberta_solicitacao",
+};
 
 function normalizar(texto: string): string {
   return texto
@@ -140,6 +152,7 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
   const colRealizacao = encontrarColuna(COLUNAS_DATA_REALIZACAO);
   const colStatusAdm = encontrarColuna(COLUNAS_STATUS_ADM);
   const colExame = encontrarColuna(COLUNAS_EXAME);
+  const colStatusVenc = encontrarColuna(COLUNAS_STATUS_VENC);
 
   if (
     !colMatricula ||
@@ -186,6 +199,10 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
       ? textoCelula(row.getCell(colExame).value).toUpperCase()
       : "";
     const exame = exameTexto === "S" || exameTexto === "N" ? exameTexto : "";
+    const statusVencTexto = colStatusVenc
+      ? normalizar(textoCelula(row.getCell(colStatusVenc).value)).toUpperCase()
+      : "";
+    const statusVenc = STATUS_VENC_MAP[statusVencTexto] ?? "";
 
     colaboradoresMap.set(matricula, {
       matricula,
@@ -201,6 +218,7 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
       data_realizacao: realizacao,
       status_adm: statusAdm,
       exame,
+      status_venc: statusVenc,
     });
   });
 

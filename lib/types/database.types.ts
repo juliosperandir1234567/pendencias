@@ -447,6 +447,7 @@ export type Database = {
           importacao_id: string | null
           macro_estrutura_id: string
           status_adm: string | null
+          status_venc: string | null
           treinamento_nr_id: string
           updated_at: string
         }
@@ -461,6 +462,7 @@ export type Database = {
           importacao_id?: string | null
           macro_estrutura_id: string
           status_adm?: string | null
+          status_venc?: string | null
           treinamento_nr_id: string
           updated_at?: string
         }
@@ -475,6 +477,7 @@ export type Database = {
           importacao_id?: string | null
           macro_estrutura_id?: string
           status_adm?: string | null
+          status_venc?: string | null
           treinamento_nr_id?: string
           updated_at?: string
         }
@@ -684,6 +687,7 @@ export type Database = {
         }
         Returns: {
           a_vencer: number
+          aberta_solicitacao: number
           afastados: number
           em_dia: number
           exame_pendente: number
@@ -751,6 +755,23 @@ export type Database = {
           codigo: string
           macro_estrutura_id: string
           nome: string
+        }[]
+      }
+      rpc_grafico_nr_macro_estrutura: {
+        Args: {
+          p_estrutura_id?: string
+          p_exame?: boolean
+          p_macro_ids?: string[]
+          p_status_adm?: string
+          p_treinamento_id?: string
+        }
+        Returns: {
+          a_vencer: number
+          aberta_solicitacao: number
+          em_dia: number
+          macro_estrutura_id: string
+          nome: string
+          vencido: number
         }[]
       }
       rpc_importar_nr: {
