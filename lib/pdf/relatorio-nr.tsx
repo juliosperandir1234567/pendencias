@@ -33,6 +33,7 @@ const STATUS_COR: Record<NrStatus, { bg: string; fg: string }> = {
   a_vencer: { bg: "#fdf3dd", fg: "#9a6b12" },
   vencido: { bg: "#fbe6e6", fg: "#b52d2d" },
   aberta_solicitacao: { bg: "#e3ecfd", fg: "#1d4fb0" },
+  sem_treinamento: { bg: "#eeeeee", fg: "#5b5b5b" },
 };
 
 const styles = StyleSheet.create({

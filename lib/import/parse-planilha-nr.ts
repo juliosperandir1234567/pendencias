@@ -68,13 +68,13 @@ const COLUNAS_EXAME = ["exame"];
 const COLUNAS_STATUS_VENC = ["status venc", "status vencimento", "status"];
 
 // Valores da coluna STATUS_VENC da planilha, mapeados para as chaves internas
-// usadas pelo painel (ver lib/nr.ts). "SEM TREINAMENTO" não entra aqui pois
-// essas linhas são descartadas antes de chegar aqui (ver eachRow abaixo).
+// usadas pelo painel (ver lib/nr.ts).
 const STATUS_VENC_MAP: Record<string, string> = {
   "EM DIA": "em_dia",
   "A VENCER": "a_vencer",
   VENCIDO: "vencido",
   "ABERTA SOLICITACAO": "aberta_solicitacao",
+  "SEM TREINAMENTO": "sem_treinamento",
 };
 
 function normalizar(texto: string): string {
@@ -189,23 +189,10 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
       : "";
     const statusVenc = STATUS_VENC_MAP[statusVencTexto] ?? "";
 
-    // "Sem treinamento" indica que o colaborador nunca fez esse treinamento —
-    // não é um registro a importar. Usamos STATUS_VENC quando disponível;
-    // como reforço, também olhamos o texto bruto da célula de vencimento
-    // (que traz "SEM TREINAMENTO" nesses casos) caso a coluna não exista.
-    const vencimentoCelulaTexto = normalizar(
-      textoCelula(row.getCell(colVencimento).value),
-    );
-    if (
-      statusVencTexto === "SEM TREINAMENTO" ||
-      (!statusVenc && vencimentoCelulaTexto === "sem treinamento")
-    ) {
-      return;
-    }
-
-    // A célula de vencimento pode trazer texto (ex.: "Em Dia") em vez de uma
-    // data, quando o treinamento não tem prazo de validade — nesse caso o
-    // registro é importado sem data_vencimento.
+    // A célula de vencimento pode trazer texto (ex.: "Em Dia", "Sem
+    // Treinamento") em vez de uma data, quando o treinamento não tem prazo de
+    // validade ou nunca foi feito — nesse caso o registro é importado sem
+    // data_vencimento, apoiado no status vindo de STATUS_VENC.
     const vencimento = dataCelula(row.getCell(colVencimento).value);
 
     const nome = textoCelula(row.getCell(colNome).value);

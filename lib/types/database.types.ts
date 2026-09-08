@@ -691,6 +691,7 @@ export type Database = {
           afastados: number
           em_dia: number
           exame_pendente: number
+          sem_treinamento: number
           vencido: number
         }[]
       }
@@ -771,6 +772,7 @@ export type Database = {
           em_dia: number
           macro_estrutura_id: string
           nome: string
+          sem_treinamento: number
           vencido: number
         }[]
       }

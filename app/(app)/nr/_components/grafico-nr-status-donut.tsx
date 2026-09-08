@@ -9,6 +9,7 @@ const CORES: Record<string, string> = {
   a_vencer: "#f59e0b",
   vencido: "#ef4444",
   aberta_solicitacao: "#3b82f6",
+  sem_treinamento: "#9ca3af",
 };
 
 export interface ContagemStatusNr {
@@ -16,6 +17,7 @@ export interface ContagemStatusNr {
   a_vencer: number;
   vencido: number;
   aberta_solicitacao: number;
+  sem_treinamento: number;
 }
 
 export function GraficoNrStatusDonut({

@@ -30,6 +30,7 @@ const PILL_CLASSES: Record<NrStatus, string> = {
   a_vencer: "bg-amber-50 text-amber-700",
   vencido: "bg-red-50 text-red-700",
   aberta_solicitacao: "bg-blue-50 text-blue-700",
+  sem_treinamento: "bg-gray-100 text-gray-600",
 };
 
 const DOT_CLASSES: Record<NrStatus, string> = {
@@ -37,6 +38,7 @@ const DOT_CLASSES: Record<NrStatus, string> = {
   a_vencer: "bg-amber-500",
   vencido: "bg-red-500",
   aberta_solicitacao: "bg-blue-500",
+  sem_treinamento: "bg-gray-400",
 };
 
 function StatusPill({ status }: { status: string }) {

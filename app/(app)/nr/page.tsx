@@ -10,6 +10,7 @@ import {
   IconClock,
   IconDownload,
   IconFlag,
+  IconGraduationCap,
   IconUpload,
   IconUsers,
 } from "@/components/ui/icons";
@@ -131,14 +132,16 @@ export default async function EspelhoNrPage({
       a_vencer: g.a_vencer,
       vencido: g.vencido,
       aberta_solicitacao: g.aberta_solicitacao,
+      sem_treinamento: g.sem_treinamento,
     }))
     .sort(
       (a, b) =>
         b.em_dia +
         b.a_vencer +
         b.vencido +
-        b.aberta_solicitacao -
-        (a.em_dia + a.a_vencer + a.vencido + a.aberta_solicitacao),
+        b.aberta_solicitacao +
+        b.sem_treinamento -
+        (a.em_dia + a.a_vencer + a.vencido + a.aberta_solicitacao + a.sem_treinamento),
     );
 
   function buildHref(patch: Record<string, string>) {
@@ -209,7 +212,7 @@ export default async function EspelhoNrPage({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
         <KpiCard
           label="Em Dia"
           value={formatNumber(contagem?.em_dia ?? 0)}
@@ -234,6 +237,12 @@ export default async function EspelhoNrPage({
           value={formatNumber(contagem?.aberta_solicitacao ?? 0)}
           accent="azul"
           icon={<IconFlag />}
+        />
+        <KpiCard
+          label="Sem Treinamento"
+          value={formatNumber(contagem?.sem_treinamento ?? 0)}
+          accent="muted"
+          icon={<IconGraduationCap />}
         />
         <KpiCard
           label="Afastados"

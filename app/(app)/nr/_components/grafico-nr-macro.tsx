@@ -19,6 +19,7 @@ export interface BarraNrDado {
   a_vencer: number;
   vencido: number;
   aberta_solicitacao: number;
+  sem_treinamento: number;
 }
 
 const SERIES: { key: NrStatus; color: string }[] = [
@@ -26,6 +27,7 @@ const SERIES: { key: NrStatus; color: string }[] = [
   { key: "a_vencer", color: "#f59e0b" },
   { key: "vencido", color: "#ef4444" },
   { key: "aberta_solicitacao", color: "#3b82f6" },
+  { key: "sem_treinamento", color: "#9ca3af" },
 ];
 
 export function LegendaStatusNr() {
