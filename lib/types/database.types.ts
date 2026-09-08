@@ -684,6 +684,8 @@ export type Database = {
           p_macro_ids?: string[]
           p_status_adm?: string
           p_treinamento_id?: string
+          p_vencimento_ate?: string
+          p_vencimento_de?: string
         }
         Returns: {
           a_vencer: number
@@ -713,6 +715,8 @@ export type Database = {
           p_status?: string
           p_status_adm?: string
           p_treinamento_id?: string
+          p_vencimento_ate?: string
+          p_vencimento_de?: string
         }
         Returns: {
           colaborador: string
@@ -765,6 +769,8 @@ export type Database = {
           p_macro_ids?: string[]
           p_status_adm?: string
           p_treinamento_id?: string
+          p_vencimento_ate?: string
+          p_vencimento_de?: string
         }
         Returns: {
           a_vencer: number

@@ -45,6 +45,8 @@ export function FiltrosNr({
   const status = searchParams.get("status") ?? "";
   const statusAdm = searchParams.get("status_adm") ?? "";
   const exame = searchParams.get("exame") ?? "";
+  const vencimentoDe = searchParams.get("vencimento_de") ?? "";
+  const vencimentoAte = searchParams.get("vencimento_ate") ?? "";
 
   const estruturasDisponiveis = macroSelecionada
     ? estruturas.filter((e) => e.macro_estrutura_id === macroSelecionada)
@@ -69,7 +71,7 @@ export function FiltrosNr({
   }
 
   return (
-    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-7">
+    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-9">
       <div>
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
           Estrutura Macro
@@ -151,7 +153,29 @@ export function FiltrosNr({
           <option value="N">Não</option>
         </select>
       </div>
-      <div className="col-span-2 flex items-center justify-between lg:col-span-7">
+      <div>
+        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
+          Vencimento de
+        </label>
+        <input
+          type="date"
+          value={vencimentoDe}
+          onChange={(e) => update({ vencimento_de: e.target.value || null })}
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
+          Vencimento até
+        </label>
+        <input
+          type="date"
+          value={vencimentoAte}
+          onChange={(e) => update({ vencimento_ate: e.target.value || null })}
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none"
+        />
+      </div>
+      <div className="col-span-2 flex items-center justify-between lg:col-span-9">
         <span className="text-xs text-gray-400">
           {isPending ? "Atualizando…" : ""}
         </span>

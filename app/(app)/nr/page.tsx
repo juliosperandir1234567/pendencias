@@ -41,10 +41,14 @@ interface SearchParamsNr {
   status?: string;
   status_adm?: string;
   exame?: string;
+  vencimento_de?: string;
+  vencimento_ate?: string;
   sort?: string;
   dir?: string;
   page?: string;
 }
+
+const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 export default async function EspelhoNrPage({
   searchParams,
@@ -60,6 +64,12 @@ export default async function EspelhoNrPage({
   const statusAdm = sp.status_adm || undefined;
   const exame =
     sp.exame === "S" ? true : sp.exame === "N" ? false : undefined;
+  const vencimentoDe = DATA_ISO.test(sp.vencimento_de ?? "")
+    ? sp.vencimento_de
+    : undefined;
+  const vencimentoAte = DATA_ISO.test(sp.vencimento_ate ?? "")
+    ? sp.vencimento_ate
+    : undefined;
   const sortBy: OrdemColuna = (ORDER_WHITELIST as readonly string[]).includes(
     sp.sort ?? "",
   )
@@ -100,6 +110,8 @@ export default async function EspelhoNrPage({
       p_treinamento_id: treinamentoId,
       p_status_adm: statusAdm,
       p_exame: exame,
+      p_vencimento_de: vencimentoDe,
+      p_vencimento_ate: vencimentoAte,
     }),
     supabase.rpc("rpc_grafico_nr_macro_estrutura", {
       p_macro_ids: macroId ? [macroId] : undefined,
@@ -107,6 +119,8 @@ export default async function EspelhoNrPage({
       p_treinamento_id: treinamentoId,
       p_status_adm: statusAdm,
       p_exame: exame,
+      p_vencimento_de: vencimentoDe,
+      p_vencimento_ate: vencimentoAte,
     }),
     supabase.rpc("rpc_espelho_nr_tabela", {
       p_macro_ids: macroId ? [macroId] : undefined,
@@ -115,6 +129,8 @@ export default async function EspelhoNrPage({
       p_status: status,
       p_status_adm: statusAdm,
       p_exame: exame,
+      p_vencimento_de: vencimentoDe,
+      p_vencimento_ate: vencimentoAte,
       p_order_by: sortBy,
       p_order_dir: sortDir,
       p_page: page,
@@ -152,6 +168,8 @@ export default async function EspelhoNrPage({
     if (sp.status) urlParams.set("status", sp.status);
     if (sp.status_adm) urlParams.set("status_adm", sp.status_adm);
     if (sp.exame) urlParams.set("exame", sp.exame);
+    if (sp.vencimento_de) urlParams.set("vencimento_de", sp.vencimento_de);
+    if (sp.vencimento_ate) urlParams.set("vencimento_ate", sp.vencimento_ate);
     if (sp.sort) urlParams.set("sort", sp.sort);
     if (sp.dir) urlParams.set("dir", sp.dir);
     if (sp.page) urlParams.set("page", sp.page);
@@ -168,6 +186,8 @@ export default async function EspelhoNrPage({
   if (sp.status) pdfParams.set("status", sp.status);
   if (sp.status_adm) pdfParams.set("status_adm", sp.status_adm);
   if (sp.exame) pdfParams.set("exame", sp.exame);
+  if (sp.vencimento_de) pdfParams.set("vencimento_de", sp.vencimento_de);
+  if (sp.vencimento_ate) pdfParams.set("vencimento_ate", sp.vencimento_ate);
   pdfParams.set("sort", sortBy);
   pdfParams.set("dir", sortDir);
   const pdfHref = `/nr/pdf?${pdfParams.toString()}`;
