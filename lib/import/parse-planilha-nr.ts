@@ -97,7 +97,10 @@ function dataCelula(raw: unknown): string {
     const [, dia, mes, ano] = brasileiro;
     return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
   }
-  return texto;
+  // Células como "SEM TREINAMENTO" indicam que não há NR aplicável para a
+  // linha — não é uma data válida, então a linha deve ser ignorada.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
+  return "";
 }
 
 export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParseada> {
@@ -156,7 +159,7 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
     if (!matricula) return;
 
     const treinamento = textoCelula(row.getCell(colTreinamento).value);
-    if (!treinamento) return;
+    if (!treinamento || normalizar(treinamento) === "sem treinamento") return;
 
     const vencimento = dataCelula(row.getCell(colVencimento).value);
     if (!vencimento) return;
