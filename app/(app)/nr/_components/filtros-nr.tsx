@@ -25,12 +25,14 @@ interface FiltrosNrProps {
   macroEstruturas: MacroEstruturaOption[];
   estruturas: EstruturaOption[];
   treinamentos: TreinamentoOption[];
+  statusAdmOpcoes: string[];
 }
 
 export function FiltrosNr({
   macroEstruturas,
   estruturas,
   treinamentos,
+  statusAdmOpcoes,
 }: FiltrosNrProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -41,6 +43,8 @@ export function FiltrosNr({
   const estruturaSelecionada = searchParams.get("estrutura") ?? "";
   const treinamentoSelecionado = searchParams.get("treinamento") ?? "";
   const status = searchParams.get("status") ?? "";
+  const statusAdm = searchParams.get("status_adm") ?? "";
+  const exame = searchParams.get("exame") ?? "";
 
   const estruturasDisponiveis = macroSelecionada
     ? estruturas.filter((e) => e.macro_estrutura_id === macroSelecionada)
@@ -65,7 +69,7 @@ export function FiltrosNr({
   }
 
   return (
-    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-7">
       <div>
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
           Estrutura Macro
@@ -116,7 +120,38 @@ export function FiltrosNr({
           ))}
         </select>
       </div>
-      <div className="col-span-2 flex items-center justify-between lg:col-span-5">
+      <div>
+        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
+          Status Adm.
+        </label>
+        <select
+          value={statusAdm}
+          onChange={(e) => update({ status_adm: e.target.value || null })}
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none"
+        >
+          <option value="">Todos</option>
+          {statusAdmOpcoes.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
+          Exame
+        </label>
+        <select
+          value={exame}
+          onChange={(e) => update({ exame: e.target.value || null })}
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none"
+        >
+          <option value="">Todos</option>
+          <option value="S">Sim</option>
+          <option value="N">Não</option>
+        </select>
+      </div>
+      <div className="col-span-2 flex items-center justify-between lg:col-span-7">
         <span className="text-xs text-gray-400">
           {isPending ? "Atualizando…" : ""}
         </span>

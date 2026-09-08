@@ -442,9 +442,11 @@ export type Database = {
           data_realizacao: string | null
           data_vencimento: string
           estrutura_id: string
+          exame: boolean | null
           id: string
           importacao_id: string | null
           macro_estrutura_id: string
+          status_adm: string | null
           treinamento_nr_id: string
           updated_at: string
         }
@@ -454,9 +456,11 @@ export type Database = {
           data_realizacao?: string | null
           data_vencimento: string
           estrutura_id: string
+          exame?: boolean | null
           id?: string
           importacao_id?: string | null
           macro_estrutura_id: string
+          status_adm?: string | null
           treinamento_nr_id: string
           updated_at?: string
         }
@@ -466,9 +470,11 @@ export type Database = {
           data_realizacao?: string | null
           data_vencimento?: string
           estrutura_id?: string
+          exame?: boolean | null
           id?: string
           importacao_id?: string | null
           macro_estrutura_id?: string
+          status_adm?: string | null
           treinamento_nr_id?: string
           updated_at?: string
         }
@@ -671,31 +677,45 @@ export type Database = {
       rpc_espelho_nr_status: {
         Args: {
           p_estrutura_id?: string
+          p_exame?: boolean
           p_macro_ids?: string[]
+          p_status_adm?: string
           p_treinamento_id?: string
         }
         Returns: {
           a_vencer: number
+          afastados: number
           em_dia: number
+          exame_pendente: number
           vencido: number
+        }[]
+      }
+      rpc_espelho_nr_status_adm_opcoes: {
+        Args: never
+        Returns: {
+          status_adm: string
         }[]
       }
       rpc_espelho_nr_tabela: {
         Args: {
           p_estrutura_id?: string
+          p_exame?: boolean
           p_macro_ids?: string[]
           p_order_by?: string
           p_order_dir?: string
           p_page?: number
           p_page_size?: number
           p_status?: string
+          p_status_adm?: string
           p_treinamento_id?: string
         }
         Returns: {
           colaborador: string
           data_vencimento: string
+          exame: boolean
           matricula: string
           status: string
+          status_adm: string
           total_count: number
           treinamento: string
         }[]

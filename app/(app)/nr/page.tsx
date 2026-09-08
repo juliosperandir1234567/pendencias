@@ -6,9 +6,11 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import {
   IconAlertTriangle,
   IconCheckCircle,
+  IconClipboardList,
   IconClock,
   IconDownload,
   IconUpload,
+  IconUsers,
 } from "@/components/ui/icons";
 import { FiltrosNr } from "./_components/filtros-nr";
 import { TabelaNr } from "./_components/tabela-nr";
@@ -29,6 +31,8 @@ interface SearchParamsNr {
   estrutura?: string;
   treinamento?: string;
   status?: string;
+  status_adm?: string;
+  exame?: string;
   sort?: string;
   dir?: string;
   page?: string;
@@ -45,6 +49,9 @@ export default async function EspelhoNrPage({
   const estruturaId = sp.estrutura || undefined;
   const treinamentoId = sp.treinamento || undefined;
   const status = isNrStatus(sp.status) ? sp.status : undefined;
+  const statusAdm = sp.status_adm || undefined;
+  const exame =
+    sp.exame === "S" ? true : sp.exame === "N" ? false : undefined;
   const sortBy: OrdemColuna = (ORDER_WHITELIST as readonly string[]).includes(
     sp.sort ?? "",
   )
@@ -67,6 +74,7 @@ export default async function EspelhoNrPage({
     { data: macroEstruturasRaw },
     { data: estruturasRaw },
     { data: treinamentosRaw },
+    { data: statusAdmRaw },
     { data: statusRaw },
     { data: tabelaRows },
   ] = await Promise.all([
@@ -76,16 +84,21 @@ export default async function EspelhoNrPage({
       .select("id, nome, macro_estrutura_id")
       .order("nome"),
     supabase.from("nr_treinamentos").select("id, nome").order("nome"),
+    supabase.rpc("rpc_espelho_nr_status_adm_opcoes"),
     supabase.rpc("rpc_espelho_nr_status", {
       p_macro_ids: macroId ? [macroId] : undefined,
       p_estrutura_id: estruturaId,
       p_treinamento_id: treinamentoId,
+      p_status_adm: statusAdm,
+      p_exame: exame,
     }),
     supabase.rpc("rpc_espelho_nr_tabela", {
       p_macro_ids: macroId ? [macroId] : undefined,
       p_estrutura_id: estruturaId,
       p_treinamento_id: treinamentoId,
       p_status: status,
+      p_status_adm: statusAdm,
+      p_exame: exame,
       p_order_by: sortBy,
       p_order_dir: sortDir,
       p_page: page,
@@ -102,6 +115,8 @@ export default async function EspelhoNrPage({
     if (sp.estrutura) urlParams.set("estrutura", sp.estrutura);
     if (sp.treinamento) urlParams.set("treinamento", sp.treinamento);
     if (sp.status) urlParams.set("status", sp.status);
+    if (sp.status_adm) urlParams.set("status_adm", sp.status_adm);
+    if (sp.exame) urlParams.set("exame", sp.exame);
     if (sp.sort) urlParams.set("sort", sp.sort);
     if (sp.dir) urlParams.set("dir", sp.dir);
     if (sp.page) urlParams.set("page", sp.page);
@@ -116,6 +131,8 @@ export default async function EspelhoNrPage({
   if (sp.estrutura) pdfParams.set("estrutura", sp.estrutura);
   if (sp.treinamento) pdfParams.set("treinamento", sp.treinamento);
   if (sp.status) pdfParams.set("status", sp.status);
+  if (sp.status_adm) pdfParams.set("status_adm", sp.status_adm);
+  if (sp.exame) pdfParams.set("exame", sp.exame);
   pdfParams.set("sort", sortBy);
   pdfParams.set("dir", sortDir);
   const pdfHref = `/nr/pdf?${pdfParams.toString()}`;
@@ -156,10 +173,11 @@ export default async function EspelhoNrPage({
           macroEstruturas={macroEstruturasRaw ?? []}
           estruturas={estruturasRaw ?? []}
           treinamentos={treinamentosRaw ?? []}
+          statusAdmOpcoes={(statusAdmRaw ?? []).map((s) => s.status_adm)}
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <KpiCard
           label="Em Dia"
           value={formatNumber(contagem?.em_dia ?? 0)}
@@ -178,6 +196,18 @@ export default async function EspelhoNrPage({
           value={formatNumber(contagem?.vencido ?? 0)}
           accent="vermelho"
           icon={<IconAlertTriangle />}
+        />
+        <KpiCard
+          label="Afastados"
+          value={formatNumber(contagem?.afastados ?? 0)}
+          accent="azul"
+          icon={<IconUsers />}
+        />
+        <KpiCard
+          label="Exame Pendente"
+          value={formatNumber(contagem?.exame_pendente ?? 0)}
+          accent="muted"
+          icon={<IconClipboardList />}
         />
       </div>
 

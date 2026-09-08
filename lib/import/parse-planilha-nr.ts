@@ -12,6 +12,8 @@ export interface RegistroNrLinha {
   treinamento: string;
   data_realizacao: string;
   data_vencimento: string;
+  status_adm: string;
+  exame: "S" | "N" | "";
 }
 
 export interface TreinamentoNrLinha {
@@ -58,6 +60,8 @@ const COLUNAS_DATA_REALIZACAO = [
   "data do treinamento",
   "realizacao",
 ];
+const COLUNAS_STATUS_ADM = ["status adm", "status administrativo"];
+const COLUNAS_EXAME = ["exame"];
 
 function normalizar(texto: string): string {
   return texto
@@ -134,6 +138,8 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
   const colTreinamento = encontrarColuna(COLUNAS_TREINAMENTO);
   const colVencimento = encontrarColuna(COLUNAS_DATA_VENCIMENTO);
   const colRealizacao = encontrarColuna(COLUNAS_DATA_REALIZACAO);
+  const colStatusAdm = encontrarColuna(COLUNAS_STATUS_ADM);
+  const colExame = encontrarColuna(COLUNAS_EXAME);
 
   if (
     !colMatricula ||
@@ -173,6 +179,13 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
     const realizacao = colRealizacao
       ? dataCelula(row.getCell(colRealizacao).value)
       : "";
+    const statusAdm = colStatusAdm
+      ? textoCelula(row.getCell(colStatusAdm).value)
+      : "";
+    const exameTexto = colExame
+      ? textoCelula(row.getCell(colExame).value).toUpperCase()
+      : "";
+    const exame = exameTexto === "S" || exameTexto === "N" ? exameTexto : "";
 
     colaboradoresMap.set(matricula, {
       matricula,
@@ -186,6 +199,8 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
       treinamento,
       data_vencimento: vencimento,
       data_realizacao: realizacao,
+      status_adm: statusAdm,
+      exame,
     });
   });
 

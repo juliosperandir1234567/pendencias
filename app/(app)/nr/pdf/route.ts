@@ -34,6 +34,9 @@ export async function GET(request: NextRequest) {
   const treinamentoId = sp.get("treinamento") || undefined;
   const statusParam = sp.get("status");
   const status = isNrStatus(statusParam) ? statusParam : undefined;
+  const statusAdm = sp.get("status_adm") || undefined;
+  const exameParam = sp.get("exame");
+  const exame = exameParam === "S" ? true : exameParam === "N" ? false : undefined;
   const orderBy = (ORDER_WHITELIST as readonly string[]).includes(sp.get("sort") ?? "")
     ? (sp.get("sort") as (typeof ORDER_WHITELIST)[number])
     : "colaborador";
@@ -55,6 +58,8 @@ export async function GET(request: NextRequest) {
         p_estrutura_id: estruturaId,
         p_treinamento_id: treinamentoId,
         p_status: status,
+        p_status_adm: statusAdm,
+        p_exame: exame,
         p_order_by: orderBy,
         p_order_dir: orderDir,
         p_page: 1,
