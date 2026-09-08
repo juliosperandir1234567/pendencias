@@ -435,6 +435,99 @@ export type Database = {
           },
         ]
       }
+      nr_colaboradores: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          data_realizacao: string | null
+          data_vencimento: string
+          estrutura_id: string
+          id: string
+          importacao_id: string | null
+          macro_estrutura_id: string
+          treinamento_nr_id: string
+          updated_at: string
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          data_realizacao?: string | null
+          data_vencimento: string
+          estrutura_id: string
+          id?: string
+          importacao_id?: string | null
+          macro_estrutura_id: string
+          treinamento_nr_id: string
+          updated_at?: string
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          data_realizacao?: string | null
+          data_vencimento?: string
+          estrutura_id?: string
+          id?: string
+          importacao_id?: string | null
+          macro_estrutura_id?: string
+          treinamento_nr_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nr_colaboradores_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nr_colaboradores_estrutura_id_fkey"
+            columns: ["estrutura_id"]
+            isOneToOne: false
+            referencedRelation: "estruturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nr_colaboradores_importacao_id_fkey"
+            columns: ["importacao_id"]
+            isOneToOne: false
+            referencedRelation: "importacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nr_colaboradores_macro_estrutura_id_fkey"
+            columns: ["macro_estrutura_id"]
+            isOneToOne: false
+            referencedRelation: "macro_estruturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nr_colaboradores_treinamento_nr_id_fkey"
+            columns: ["treinamento_nr_id"]
+            isOneToOne: false
+            referencedRelation: "nr_treinamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nr_treinamentos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean
@@ -575,6 +668,38 @@ export type Database = {
         Args: { p_data_referencia: string; p_descricao?: string }
         Returns: string
       }
+      rpc_espelho_nr_status: {
+        Args: {
+          p_estrutura_id?: string
+          p_macro_ids?: string[]
+          p_treinamento_id?: string
+        }
+        Returns: {
+          a_vencer: number
+          em_dia: number
+          vencido: number
+        }[]
+      }
+      rpc_espelho_nr_tabela: {
+        Args: {
+          p_estrutura_id?: string
+          p_macro_ids?: string[]
+          p_order_by?: string
+          p_order_dir?: string
+          p_page?: number
+          p_page_size?: number
+          p_status?: string
+          p_treinamento_id?: string
+        }
+        Returns: {
+          colaborador: string
+          data_vencimento: string
+          matricula: string
+          status: string
+          total_count: number
+          treinamento: string
+        }[]
+      }
       rpc_grafico_estrutura: {
         Args: {
           p_gestor_id?: string
@@ -606,6 +731,19 @@ export type Database = {
           codigo: string
           macro_estrutura_id: string
           nome: string
+        }[]
+      }
+      rpc_importar_nr: {
+        Args: {
+          p_arquivo_nome: string
+          p_registros: Json
+          p_treinamentos: Json
+        }
+        Returns: {
+          importacao_id: string
+          total_erros: number
+          total_registros: number
+          total_treinamentos: number
         }[]
       }
       rpc_importar_pendencias: {

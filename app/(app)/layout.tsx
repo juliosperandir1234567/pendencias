@@ -84,6 +84,7 @@ export default async function AppLayout({
           <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-3 sm:px-6">
             <NavLink href="/geral">Visão Geral</NavLink>
             <NavLink href="/individual">Visão Individual</NavLink>
+            <NavLink href="/nr">Espelho de NR&apos;s</NavLink>
             {profile?.role === "administrador" && (
               <>
                 <NavLink href="/admin/importar">Importar</NavLink>

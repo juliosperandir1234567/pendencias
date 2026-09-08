@@ -160,3 +160,39 @@ export function IconDownload({ className = base }: IconProps) {
     </svg>
   );
 }
+
+export function IconUpload({ className = base }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 15V3" />
+      <path d="m7 8 5-5 5 5" />
+      <path d="M5 21h14" />
+    </svg>
+  );
+}
+
+export function IconAlertTriangle({ className = base }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M10.3 3.9 2.5 17a1.5 1.5 0 0 0 1.3 2.2h16.4a1.5 1.5 0 0 0 1.3-2.2L13.7 3.9a1.5 1.5 0 0 0-2.6 0z" />
+      <path d="M12 9v4" />
+      <path d="M12 16h.01" />
+    </svg>
+  );
+}

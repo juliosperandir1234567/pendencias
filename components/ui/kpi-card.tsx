@@ -1,15 +1,19 @@
-type Accent = "verde" | "azul" | "muted";
+type Accent = "verde" | "azul" | "muted" | "ambar" | "vermelho";
 
 const ACCENT_TEXT: Record<Accent, string> = {
   verde: "text-brand-verde",
   azul: "text-brand-azul",
   muted: "text-gray-500",
+  ambar: "text-amber-600",
+  vermelho: "text-red-600",
 };
 
 const ACCENT_BADGE: Record<Accent, string> = {
   verde: "bg-brand-verde text-white",
   azul: "bg-brand-azul text-white",
   muted: "bg-gray-400 text-white",
+  ambar: "bg-amber-500 text-white",
+  vermelho: "bg-red-500 text-white",
 };
 
 interface KpiCardProps {

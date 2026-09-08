@@ -9,3 +9,10 @@ export function formatPercent(value: number | null | undefined, digits = 1): str
     minimumFractionDigits: digits,
   }).format(value)}%`;
 }
+
+export function formatDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const [ano, mes, dia] = value.split("-");
+  if (!ano || !mes || !dia) return value;
+  return `${dia}/${mes}/${ano}`;
+}
