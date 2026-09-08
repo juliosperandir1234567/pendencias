@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 export interface ColaboradorNrLinha {
   matricula: string;
   nome: string;
+  macro_processo: string;
   estrutura_codigo: string;
   turno: string;
 }
@@ -39,6 +40,7 @@ const TURNO_MAP: Record<string, string> = {
 // DS_TREINAMENTO, VENCIMENTO, STATUS_VENC, STATUS_ADM, EXAME.
 const COLUNAS_MATRICULA = ["matricula"];
 const COLUNAS_NOME = ["nome", "colaborador"];
+const COLUNAS_MACRO_PROCESSO = ["macro processo", "macroprocesso"];
 const COLUNAS_ESTRUTURA = ["ds estrutura", "estrutura"];
 const COLUNAS_TURNO = ["turno"];
 const COLUNAS_TREINAMENTO = [
@@ -67,7 +69,7 @@ const COLUNAS_STATUS_VENC = ["status venc", "status vencimento", "status"];
 
 // Valores da coluna STATUS_VENC da planilha, mapeados para as chaves internas
 // usadas pelo painel (ver lib/nr.ts). "SEM TREINAMENTO" não entra aqui pois
-// essas linhas já são descartadas antes (nenhuma data de vencimento válida).
+// essas linhas são descartadas antes de chegar aqui (ver eachRow abaixo).
 const STATUS_VENC_MAP: Record<string, string> = {
   "EM DIA": "em_dia",
   "A VENCER": "a_vencer",
@@ -113,8 +115,8 @@ function dataCelula(raw: unknown): string {
     const [, dia, mes, ano] = brasileiro;
     return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
   }
-  // Células como "SEM TREINAMENTO" indicam que não há NR aplicável para a
-  // linha — não é uma data válida, então a linha deve ser ignorada.
+  // Outros textos (ex.: "Em Dia", "Sem Treinamento") não são datas válidas —
+  // retorna vazio; quem decide o que fazer com isso é o chamador.
   if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
   return "";
 }
@@ -145,6 +147,7 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
 
   const colMatricula = encontrarColuna(COLUNAS_MATRICULA);
   const colNome = encontrarColuna(COLUNAS_NOME);
+  const colMacroProcesso = encontrarColuna(COLUNAS_MACRO_PROCESSO);
   const colEstrutura = encontrarColuna(COLUNAS_ESTRUTURA);
   const colTurno = encontrarColuna(COLUNAS_TURNO);
   const colTreinamento = encontrarColuna(COLUNAS_TREINAMENTO);
@@ -157,13 +160,14 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
   if (
     !colMatricula ||
     !colNome ||
+    !colMacroProcesso ||
     !colEstrutura ||
     !colTurno ||
     !colTreinamento ||
     !colVencimento
   ) {
     throw new Error(
-      "Não encontrei as colunas esperadas (Matrícula, Nome, Estrutura, Turno, Treinamento/NR, Vencimento). Confira o cabeçalho da planilha.",
+      "Não encontrei as colunas esperadas (Matrícula, Nome, Macro Processo, Estrutura, Turno, Treinamento/NR, Vencimento). Confira o cabeçalho da planilha.",
     );
   }
 
@@ -178,12 +182,34 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
     if (!matricula) return;
 
     const treinamento = textoCelula(row.getCell(colTreinamento).value);
-    if (!treinamento || normalizar(treinamento) === "sem treinamento") return;
+    if (!treinamento) return;
 
+    const statusVencTexto = colStatusVenc
+      ? normalizar(textoCelula(row.getCell(colStatusVenc).value)).toUpperCase()
+      : "";
+    const statusVenc = STATUS_VENC_MAP[statusVencTexto] ?? "";
+
+    // "Sem treinamento" indica que o colaborador nunca fez esse treinamento —
+    // não é um registro a importar. Usamos STATUS_VENC quando disponível;
+    // como reforço, também olhamos o texto bruto da célula de vencimento
+    // (que traz "SEM TREINAMENTO" nesses casos) caso a coluna não exista.
+    const vencimentoCelulaTexto = normalizar(
+      textoCelula(row.getCell(colVencimento).value),
+    );
+    if (
+      statusVencTexto === "SEM TREINAMENTO" ||
+      (!statusVenc && vencimentoCelulaTexto === "sem treinamento")
+    ) {
+      return;
+    }
+
+    // A célula de vencimento pode trazer texto (ex.: "Em Dia") em vez de uma
+    // data, quando o treinamento não tem prazo de validade — nesse caso o
+    // registro é importado sem data_vencimento.
     const vencimento = dataCelula(row.getCell(colVencimento).value);
-    if (!vencimento) return;
 
     const nome = textoCelula(row.getCell(colNome).value);
+    const macroProcesso = textoCelula(row.getCell(colMacroProcesso).value);
     const estruturaTexto = textoCelula(row.getCell(colEstrutura).value);
     const turnoTexto = textoCelula(row.getCell(colTurno).value).toUpperCase();
     const turno = TURNO_MAP[turnoTexto];
@@ -199,14 +225,11 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
       ? textoCelula(row.getCell(colExame).value).toUpperCase()
       : "";
     const exame = exameTexto === "S" || exameTexto === "N" ? exameTexto : "";
-    const statusVencTexto = colStatusVenc
-      ? normalizar(textoCelula(row.getCell(colStatusVenc).value)).toUpperCase()
-      : "";
-    const statusVenc = STATUS_VENC_MAP[statusVencTexto] ?? "";
 
     colaboradoresMap.set(matricula, {
       matricula,
       nome,
+      macro_processo: macroProcesso,
       estrutura_codigo: estruturaTexto,
       turno,
     });

@@ -440,7 +440,7 @@ export type Database = {
           colaborador_id: string
           created_at: string
           data_realizacao: string | null
-          data_vencimento: string
+          data_vencimento: string | null
           estrutura_id: string
           exame: boolean | null
           id: string
@@ -455,7 +455,7 @@ export type Database = {
           colaborador_id: string
           created_at?: string
           data_realizacao?: string | null
-          data_vencimento: string
+          data_vencimento?: string | null
           estrutura_id: string
           exame?: boolean | null
           id?: string
@@ -470,7 +470,7 @@ export type Database = {
           colaborador_id?: string
           created_at?: string
           data_realizacao?: string | null
-          data_vencimento?: string
+          data_vencimento?: string | null
           estrutura_id?: string
           exame?: boolean | null
           id?: string
@@ -715,11 +715,11 @@ export type Database = {
         }
         Returns: {
           colaborador: string
-          data_vencimento: string
-          exame: boolean
+          data_vencimento: string | null
+          exame: boolean | null
           matricula: string
           status: string
-          status_adm: string
+          status_adm: string | null
           total_count: number
           treinamento: string
         }[]

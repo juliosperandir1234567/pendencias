@@ -6,7 +6,7 @@ export interface LinhaRelatorioNr {
   matricula: string;
   colaborador: string;
   treinamento: string;
-  data_vencimento: string;
+  data_vencimento: string | null;
   status: string;
 }
 
