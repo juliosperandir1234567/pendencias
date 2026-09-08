@@ -736,11 +736,13 @@ export type Database = {
       rpc_importar_nr: {
         Args: {
           p_arquivo_nome: string
+          p_colaboradores: Json
           p_registros: Json
           p_treinamentos: Json
         }
         Returns: {
           importacao_id: string
+          total_colaboradores: number
           total_erros: number
           total_registros: number
           total_treinamentos: number

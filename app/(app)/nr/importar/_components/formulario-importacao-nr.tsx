@@ -87,6 +87,7 @@ export function FormularioImportacaoNr({ totalAtual }: { totalAtual: number }) {
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
           <p className="font-medium">Importação concluída</p>
           <ul className="mt-1 space-y-0.5">
+            <li>{formatNumber(resultado.resumo.colaboradores)} colaborador(es) atualizado(s)</li>
             <li>{formatNumber(resultado.resumo.treinamentos)} treinamento(s) novo(s) no catálogo</li>
             <li>{formatNumber(resultado.resumo.registros)} registro(s) sincronizado(s)</li>
             {resultado.resumo.erros > 0 && (

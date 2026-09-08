@@ -13,6 +13,7 @@ export interface ResultadoImportacaoNr {
     percentualQueda: number;
   };
   resumo?: {
+    colaboradores: number;
     treinamentos: number;
     registros: number;
     erros: number;
@@ -84,6 +85,7 @@ export async function importarNr(formData: FormData): Promise<ResultadoImportaca
 
   const { data, error } = await supabase.rpc("rpc_importar_nr", {
     p_arquivo_nome: file.name,
+    p_colaboradores: parsed.colaboradores as unknown as Json,
     p_treinamentos: parsed.treinamentos as unknown as Json,
     p_registros: parsed.registros as unknown as Json,
   });
@@ -96,6 +98,7 @@ export async function importarNr(formData: FormData): Promise<ResultadoImportaca
   return {
     ok: true,
     resumo: {
+      colaboradores: resultado?.total_colaboradores ?? 0,
       treinamentos: resultado?.total_treinamentos ?? 0,
       registros: resultado?.total_registros ?? 0,
       erros: resultado?.total_erros ?? 0,

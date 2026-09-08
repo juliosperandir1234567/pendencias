@@ -1,5 +1,12 @@
 import ExcelJS from "exceljs";
 
+export interface ColaboradorNrLinha {
+  matricula: string;
+  nome: string;
+  estrutura_codigo: string;
+  turno: string;
+}
+
 export interface RegistroNrLinha {
   matricula: string;
   treinamento: string;
@@ -12,17 +19,35 @@ export interface TreinamentoNrLinha {
 }
 
 export interface PlanilhaNrParseada {
+  colaboradores: ColaboradorNrLinha[];
   treinamentos: TreinamentoNrLinha[];
   registros: RegistroNrLinha[];
 }
 
-// Nomes de coluna aceitos (o formato exato da planilha "Espelho de NR's"
-// ainda não foi confirmado — ajustar esta lista quando o arquivo real chegar).
+const TURNO_MAP: Record<string, string> = {
+  DIURNO: "diurno",
+  VESPERTINO: "vespertino",
+  NOTURNO: "noturno",
+  FIXO: "fixo",
+};
+
+// Layout confirmado da aba "Espelho de NR's": colunas ID_ESTRUTURA_MACRO,
+// MACRO_PROCESSO, ID_ESTRUTURA, DS_ESTRUTURA, MATRICULA, NOME, TURNO,
+// DS_TREINAMENTO, VENCIMENTO, STATUS_VENC, STATUS_ADM, EXAME.
 const COLUNAS_MATRICULA = ["matricula"];
-const COLUNAS_TREINAMENTO = ["treinamento", "nr", "norma", "norma regulamentadora"];
+const COLUNAS_NOME = ["nome", "colaborador"];
+const COLUNAS_ESTRUTURA = ["ds estrutura", "estrutura"];
+const COLUNAS_TURNO = ["turno"];
+const COLUNAS_TREINAMENTO = [
+  "ds treinamento",
+  "treinamento",
+  "nr",
+  "norma",
+  "norma regulamentadora",
+];
 const COLUNAS_DATA_VENCIMENTO = [
-  "data vencimento",
   "vencimento",
+  "data vencimento",
   "data de vencimento",
   "data validade",
   "validade",
@@ -38,6 +63,8 @@ function normalizar(texto: string): string {
   return texto
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
 }
@@ -98,16 +125,27 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
   }
 
   const colMatricula = encontrarColuna(COLUNAS_MATRICULA);
+  const colNome = encontrarColuna(COLUNAS_NOME);
+  const colEstrutura = encontrarColuna(COLUNAS_ESTRUTURA);
+  const colTurno = encontrarColuna(COLUNAS_TURNO);
   const colTreinamento = encontrarColuna(COLUNAS_TREINAMENTO);
   const colVencimento = encontrarColuna(COLUNAS_DATA_VENCIMENTO);
   const colRealizacao = encontrarColuna(COLUNAS_DATA_REALIZACAO);
 
-  if (!colMatricula || !colTreinamento || !colVencimento) {
+  if (
+    !colMatricula ||
+    !colNome ||
+    !colEstrutura ||
+    !colTurno ||
+    !colTreinamento ||
+    !colVencimento
+  ) {
     throw new Error(
-      "Não encontrei as colunas esperadas (Matrícula, Treinamento/NR, Data de Vencimento). Confira o cabeçalho da planilha.",
+      "Não encontrei as colunas esperadas (Matrícula, Nome, Estrutura, Turno, Treinamento/NR, Vencimento). Confira o cabeçalho da planilha.",
     );
   }
 
+  const colaboradoresMap = new Map<string, ColaboradorNrLinha>();
   const treinamentosSet = new Set<string>();
   const registros: RegistroNrLinha[] = [];
 
@@ -123,10 +161,22 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
     const vencimento = dataCelula(row.getCell(colVencimento).value);
     if (!vencimento) return;
 
+    const nome = textoCelula(row.getCell(colNome).value);
+    const estruturaTexto = textoCelula(row.getCell(colEstrutura).value);
+    const turnoTexto = textoCelula(row.getCell(colTurno).value).toUpperCase();
+    const turno = TURNO_MAP[turnoTexto];
+    if (!turno) return;
+
     const realizacao = colRealizacao
       ? dataCelula(row.getCell(colRealizacao).value)
       : "";
 
+    colaboradoresMap.set(matricula, {
+      matricula,
+      nome,
+      estrutura_codigo: estruturaTexto,
+      turno,
+    });
     treinamentosSet.add(treinamento);
     registros.push({
       matricula,
@@ -137,6 +187,7 @@ export async function parsePlanilhaNr(buffer: Buffer): Promise<PlanilhaNrParsead
   });
 
   return {
+    colaboradores: [...colaboradoresMap.values()],
     treinamentos: [...treinamentosSet].map((nome) => ({ nome })),
     registros,
   };
