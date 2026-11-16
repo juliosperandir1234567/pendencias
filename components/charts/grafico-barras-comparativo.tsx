@@ -63,9 +63,10 @@ export function GraficoBarrasComparativo({
             <YAxis hide />
             <Tooltip
               cursor={{ fill: "rgba(11,74,44,0.05)" }}
+              // `name` chega como o nome da série ("Início"/"Atual"), não a chave.
               formatter={(value, name) => [
                 formatNumber(Number(value ?? 0)),
-                name === "inicio" ? "Início" : "Atual",
+                name === "inicio" || name === "Início" ? "Início" : "Atual",
               ]}
               contentStyle={{
                 borderRadius: 8,

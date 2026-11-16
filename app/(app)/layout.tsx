@@ -54,9 +54,6 @@ export default async function AppLayout({
                 <IconBuilding className="h-5 w-5 text-white" />
               )}
             </span>
-            <p className="hidden text-[10px] uppercase tracking-widest text-emerald-100/80 sm:block">
-              Usina
-            </p>
           </div>
 
           <h1 className="truncate text-center text-base font-semibold sm:text-xl">

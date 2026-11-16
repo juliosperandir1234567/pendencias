@@ -129,7 +129,7 @@ function Letterhead({ geradoEm, geradoPor }: { geradoEm: string; geradoPor: stri
     <View style={styles.letterhead} fixed>
       <View style={styles.mark} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.eyebrow}>DASHBOARD DE PENDÊNCIAS · USINA</Text>
+        <Text style={styles.eyebrow}>DASHBOARD DE PENDÊNCIAS</Text>
         <Text style={styles.title}>Espelho de NR&apos;s</Text>
       </View>
       <View>
@@ -237,7 +237,7 @@ export function RelatorioNr({
           <Text
             render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`}
           />
-          <Text>Dashboard de Pendências — Usina</Text>
+          <Text>Dashboard de Pendências</Text>
         </View>
       </Page>
     </Document>

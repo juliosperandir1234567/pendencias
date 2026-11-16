@@ -1,4 +1,5 @@
-import { Document, Page, View, Text, Image, StyleSheet, Svg, Circle, Path } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
+import { EMOJI_FESTA, EMOJI_PALMAS } from "@/lib/pdf/emoji";
 import { TURNO_GRUPOS, TURNO_LABELS, type Turno } from "@/lib/filters";
 import { formatNumber } from "@/lib/format";
 
@@ -189,6 +190,12 @@ const styles = StyleSheet.create({
   colColaborador: { width: "33%", paddingRight: 8 },
   colTreina: { width: "10%" },
   colTreinamento: { width: "46%" },
+  divisorTurno: {
+    borderTopWidth: 1.5,
+    borderTopColor: "#8a968f",
+    marginTop: 2,
+    marginBottom: 14,
+  },
   parabens: {
     flexDirection: "row",
     alignItems: "center",
@@ -254,7 +261,7 @@ function Letterhead({
         <View style={styles.mark} />
       )}
       <View style={{ flex: 1 }}>
-        <Text style={styles.eyebrow}>DASHBOARD DE PENDÊNCIAS · USINA</Text>
+        <Text style={styles.eyebrow}>DASHBOARD DE PENDÊNCIAS</Text>
         <Text style={styles.title}>Detalhamento por Colaborador</Text>
       </View>
       <View>
@@ -361,22 +368,17 @@ function LinhaTabela({ r, i }: { r: LinhaRelatorio; i: number }) {
 function ParabensTurno({ titulo }: { titulo: string }) {
   return (
     <View style={styles.parabens} wrap={false}>
-      <Svg width={22} height={22} viewBox="0 0 24 24" style={{ marginRight: 10 }}>
-        <Circle cx="12" cy="12" r="11" fill="#1e7a46" />
-        <Path
-          d="M6.5 12.5l3.5 3.5 7.5-8"
-          stroke="#ffffff"
-          strokeWidth={2.4}
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </Svg>
+      {/* eslint-disable-next-line jsx-a11y/alt-text */}
+      <Image src={{ data: EMOJI_PALMAS, format: "png" }} style={{ width: 22, height: 22, marginRight: 10 }} />
       <View>
         <Text style={styles.parabensTurno}>{titulo}</Text>
-        <Text style={styles.parabensTexto}>
-          Parabéns! Nenhuma pendência de treinamento neste turno.
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 2 }}>
+          <Text style={[styles.parabensTexto, { marginTop: 0 }]}>
+            Parabéns! Nenhuma pendência de treinamento neste turno.
+          </Text>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image src={{ data: EMOJI_FESTA, format: "png" }} style={{ width: 11, height: 11, marginLeft: 4 }} />
+        </View>
       </View>
     </View>
   );
@@ -458,8 +460,11 @@ export function RelatorioColaboradores({
               </View>
             )}
             {grupo ? (
-              agruparPorTurno(grupo.linhas, turnoGrupoFiltro).map((secao) => (
-                <SecaoTurnoView key={secao.key} secao={secao} />
+              agruparPorTurno(grupo.linhas, turnoGrupoFiltro).map((secao, si) => (
+                <View key={secao.key}>
+                  {si > 0 && <View style={styles.divisorTurno} />}
+                  <SecaoTurnoView secao={secao} />
+                </View>
               ))
             ) : (
               <>
@@ -478,7 +483,7 @@ export function RelatorioColaboradores({
                 `Página ${pageNumber} de ${totalPages}`
               }
             />
-            <Text>Dashboard de Pendências — Usina</Text>
+            <Text>Dashboard de Pendências</Text>
           </View>
         </Page>
       ))}
