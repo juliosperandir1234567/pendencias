@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { isTurnoGrupoKey, parseIdsParam } from "@/lib/filters";
+import {
+  listaOuNada,
+  parseIdsParam,
+  parseQualis,
+  parseTurnoGrupos,
+} from "@/lib/filters";
 import { formatNumber, formatPercent } from "@/lib/format";
 import { compararNome } from "@/lib/sort";
 import { estruturasComRotulo, rotuloEstrutura } from "@/lib/estrutura";
@@ -32,11 +37,9 @@ export default async function GeralPage({
 }) {
   const sp = await searchParams;
   const macroIds = parseIdsParam(sp.macro);
-  const estruturaId = parseIdsParam(sp.estrutura)[0];
-  const treinamentoId = parseIdsParam(sp.treinamento)[0];
-  const turnoGrupo: string | undefined = isTurnoGrupoKey(sp.turno)
-    ? sp.turno
-    : undefined;
+  const estruturaIds = listaOuNada(parseIdsParam(sp.estrutura));
+  const treinamentoIds = listaOuNada(parseIdsParam(sp.treinamento));
+  const turnoGrupos = listaOuNada(parseTurnoGrupos(sp.turno));
 
   const supabase = await createClient();
 
@@ -49,13 +52,7 @@ export default async function GeralPage({
   const isAdmin = profile?.role === "administrador";
 
   // Gestor só vê Qualis = Sim, travado (mesmo que tente forçar via URL).
-  const qualis = isAdmin
-    ? sp.qualis === "sim"
-      ? true
-      : sp.qualis === "nao"
-        ? false
-        : undefined
-    : true;
+  const qualis = parseQualis(sp.qualis, isAdmin);
 
   const [
     { data: macroEstruturasRaw },
@@ -71,27 +68,28 @@ export default async function GeralPage({
       .select("id, codigo, nome, macro_estrutura_id")
       .order("nome"),
     supabase.rpc("rpc_treinamentos_por_estrutura", {
-      p_estrutura_id: estruturaId,
+      p_estrutura_ids: estruturaIds,
     }),
     supabase.rpc("rpc_indicadores_geral", {
       p_macro_ids: macroIds.length ? macroIds : undefined,
-      p_estrutura_id: estruturaId,
-      p_treinamento_id: treinamentoId,
+      p_estrutura_ids: estruturaIds,
+      p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
-      p_turno_grupo: turnoGrupo,
+      p_turno_grupos: turnoGrupos,
     }),
     supabase.rpc("rpc_grafico_macro_estrutura", {
       p_macro_ids: macroIds.length ? macroIds : undefined,
-      p_estrutura_id: estruturaId,
-      p_treinamento_id: treinamentoId,
+      p_estrutura_ids: estruturaIds,
+      p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
-      p_turno_grupo: turnoGrupo,
+      p_turno_grupos: turnoGrupos,
     }),
     supabase.rpc("rpc_grafico_estrutura", {
       p_macro_ids: macroIds.length ? macroIds : undefined,
-      p_treinamento_id: treinamentoId,
+      p_estrutura_ids: estruturaIds,
+      p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
-      p_turno_grupo: turnoGrupo,
+      p_turno_grupos: turnoGrupos,
     }),
   ]);
 

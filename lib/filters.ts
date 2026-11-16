@@ -61,3 +61,31 @@ export function parseIdsParam(value?: string): string[] {
     .map((v) => v.trim())
     .filter(Boolean);
 }
+
+/** "diurno_fixo,noturno" → ["diurno_fixo", "noturno"] (ignora valores inválidos). */
+export function parseTurnoGrupos(value?: string | null): string[] {
+  return parseIdsParam(value ?? undefined).filter((v) => isTurnoGrupoKey(v));
+}
+
+/**
+ * Qualis com seleção múltipla: só "sim" → true, só "nao" → false,
+ * nenhum ou os dois → sem filtro. Gestor sempre vê Qualis = Sim.
+ */
+export function parseQualis(value: string | null | undefined, isAdmin: boolean) {
+  if (!isAdmin) return true;
+  const valores = parseIdsParam(value ?? undefined);
+  const sim = valores.includes("sim");
+  const nao = valores.includes("nao");
+  if (sim === nao) return undefined;
+  return sim;
+}
+
+/** Lista vazia vira `undefined` (= sem filtro) para as funções do banco. */
+export function listaOuNada<T>(lista: T[]): T[] | undefined {
+  return lista.length ? lista : undefined;
+}
+
+export const QUALIS_OPCOES = [
+  { value: "sim", label: "Sim" },
+  { value: "nao", label: "Não" },
+];

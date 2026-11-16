@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { parseIdsParam, TURNO_GRUPOS } from "@/lib/filters";
+import { parseIdsParam, QUALIS_OPCOES, TURNO_GRUPOS } from "@/lib/filters";
 
 interface MacroEstruturaOption {
   id: string;
@@ -46,8 +46,8 @@ export function FiltrosGeral({
   const treinamentoSelecionado = parseIdsParam(
     searchParams.get("treinamento") ?? undefined,
   );
-  const qualis = searchParams.get("qualis") ?? "";
-  const turno = searchParams.get("turno") ?? "";
+  const qualis = parseIdsParam(searchParams.get("qualis") ?? undefined);
+  const turno = parseIdsParam(searchParams.get("turno") ?? undefined);
 
   const estruturasDisponiveis = macroSelecionadas.length
     ? estruturas.filter((e) => macroSelecionadas.includes(e.macro_estrutura_id))
@@ -59,15 +59,6 @@ export function FiltrosGeral({
       if (values.length) params.set(key, values.join(","));
       else params.delete(key);
     }
-    startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    });
-  }
-
-  function updateScalar(key: string, value: string | null) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set(key, value);
-    else params.delete(key);
     startTransition(() => {
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     });
@@ -98,6 +89,7 @@ export function FiltrosGeral({
           Estrutura
         </label>
         <SearchableSelect
+          multiple
           placeholder="Todas as estruturas"
           options={estruturasDisponiveis.map((e) => ({
             value: e.id,
@@ -112,6 +104,7 @@ export function FiltrosGeral({
           Treinamento
         </label>
         <SearchableSelect
+          multiple
           placeholder="Todos"
           options={treinamentos.map((t) => ({ value: t.id, label: t.nome }))}
           value={treinamentoSelecionado}
@@ -122,33 +115,26 @@ export function FiltrosGeral({
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
           Qualis
         </label>
-        <select
-          value={qualisTravado ? "sim" : qualis}
+        <SearchableSelect
+          multiple
+          placeholder="Todos"
+          options={QUALIS_OPCOES}
+          value={qualisTravado ? ["sim"] : qualis}
           disabled={qualisTravado}
-          onChange={(e) => updateScalar("qualis", e.target.value || null)}
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
-        >
-          <option value="">Todos</option>
-          <option value="sim">Sim</option>
-          <option value="nao">Não</option>
-        </select>
+          onChange={(v) => updateParams({ qualis: v })}
+        />
       </div>
       <div>
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
           Turno
         </label>
-        <select
+        <SearchableSelect
+          multiple
+          placeholder="Todos"
+          options={TURNO_GRUPOS.map((g) => ({ value: g.key, label: g.label }))}
           value={turno}
-          onChange={(e) => updateScalar("turno", e.target.value || null)}
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none"
-        >
-          <option value="">Todos</option>
-          {TURNO_GRUPOS.map((g) => (
-            <option key={g.key} value={g.key}>
-              {g.label}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => updateParams({ turno: v })}
+        />
       </div>
       <div className="col-span-2 flex items-center justify-between lg:col-span-5">
         <span className="text-xs text-gray-400">

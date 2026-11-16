@@ -24,8 +24,8 @@ export interface RelatorioColaboradoresProps {
   grupos: GrupoEstrutura[];
   /** Logo da empresa (PNG/JPG) já baixada. */
   logo?: { data: Buffer; format: "png" | "jpg" } | null;
-  /** Turno filtrado (chave de TURNO_GRUPOS); sem filtro, mostra todos os turnos. */
-  turnoGrupoFiltro?: string;
+  /** Turnos filtrados (chaves de TURNO_GRUPOS); sem filtro, mostra todos. */
+  turnoGruposFiltro?: string[];
 }
 
 export interface GrupoEstrutura {
@@ -320,9 +320,9 @@ interface SecaoTurno {
 }
 
 /** Agrupa as linhas em Diurno/Fixo → Vespertino → Noturno (→ Sem turno). */
-function agruparPorTurno(linhas: LinhaRelatorio[], turnoGrupoFiltro?: string): SecaoTurno[] {
-  const grupos = turnoGrupoFiltro
-    ? TURNO_GRUPOS.filter((g) => g.key === turnoGrupoFiltro)
+function agruparPorTurno(linhas: LinhaRelatorio[], turnoGruposFiltro?: string[]): SecaoTurno[] {
+  const grupos = turnoGruposFiltro?.length
+    ? TURNO_GRUPOS.filter((g) => turnoGruposFiltro.includes(g.key))
     : TURNO_GRUPOS;
   const secoes: SecaoTurno[] = grupos.map((g) => ({
     key: g.key,
@@ -429,7 +429,7 @@ export function RelatorioColaboradores({
   totalCount,
   grupos,
   logo,
-  turnoGrupoFiltro,
+  turnoGruposFiltro,
 }: RelatorioColaboradoresProps) {
   const gruposComDados = grupos.filter((g) => g.linhas.length > 0);
   // Sem linhas: ainda gera uma página com o cabeçalho e o rodapé.
@@ -460,7 +460,7 @@ export function RelatorioColaboradores({
               </View>
             )}
             {grupo ? (
-              agruparPorTurno(grupo.linhas, turnoGrupoFiltro).map((secao, si) => (
+              agruparPorTurno(grupo.linhas, turnoGruposFiltro).map((secao, si) => (
                 <View key={secao.key}>
                   {si > 0 && <View style={styles.divisorTurno} />}
                   <SecaoTurnoView secao={secao} />

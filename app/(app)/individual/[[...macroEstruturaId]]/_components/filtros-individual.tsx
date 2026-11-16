@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { TURNO_GRUPOS } from "@/lib/filters";
+import { parseIdsParam, QUALIS_OPCOES, TURNO_GRUPOS } from "@/lib/filters";
 
 interface MacroEstruturaOption {
   id: string;
@@ -43,10 +43,12 @@ export function FiltrosIndividual({
     ? `/individual/${macroEstruturaId}`
     : "/individual";
 
-  const estrutura = searchParams.get("estrutura") ?? "";
-  const treinamento = searchParams.get("treinamento") ?? "";
-  const qualis = searchParams.get("qualis") ?? "";
-  const turno = searchParams.get("turno") ?? "";
+  const lista = (chave: string) =>
+    parseIdsParam(searchParams.get(chave) ?? undefined);
+  const estrutura = lista("estrutura");
+  const treinamento = lista("treinamento");
+  const qualis = lista("qualis");
+  const turno = lista("turno");
 
   function update(patch: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -88,45 +90,40 @@ export function FiltrosIndividual({
       </Field>
       <Field label="Estrutura">
         <SearchableSelect
+          multiple
           placeholder="Todas"
           options={estruturas.map((e) => ({ value: e.id, label: e.nome }))}
-          value={estrutura ? [estrutura] : []}
-          onChange={(v) => update({ estrutura: v[0] ?? null })}
+          value={estrutura}
+          onChange={(v) => update({ estrutura: v.join(",") || null })}
         />
       </Field>
       <Field label="Treinamento">
         <SearchableSelect
+          multiple
           placeholder="Todos"
           options={treinamentos.map((t) => ({ value: t.id, label: t.nome }))}
-          value={treinamento ? [treinamento] : []}
-          onChange={(v) => update({ treinamento: v[0] ?? null })}
+          value={treinamento}
+          onChange={(v) => update({ treinamento: v.join(",") || null })}
         />
       </Field>
       <Field label="Qualis">
-        <select
-          value={qualisTravado ? "sim" : qualis}
+        <SearchableSelect
+          multiple
+          placeholder="Todos"
+          options={QUALIS_OPCOES}
+          value={qualisTravado ? ["sim"] : qualis}
           disabled={qualisTravado}
-          onChange={(e) => update({ qualis: e.target.value || null })}
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
-        >
-          <option value="">Todos</option>
-          <option value="sim">Sim</option>
-          <option value="nao">Não</option>
-        </select>
+          onChange={(v) => update({ qualis: v.join(",") || null })}
+        />
       </Field>
       <Field label="Turno">
-        <select
+        <SearchableSelect
+          multiple
+          placeholder="Todos"
+          options={TURNO_GRUPOS.map((g) => ({ value: g.key, label: g.label }))}
           value={turno}
-          onChange={(e) => update({ turno: e.target.value || null })}
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none"
-        >
-          <option value="">Todos</option>
-          {TURNO_GRUPOS.map((g) => (
-            <option key={g.key} value={g.key}>
-              {g.label}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => update({ turno: v.join(",") || null })}
+        />
       </Field>
       <div className="col-span-2 flex items-center justify-between lg:col-span-5">
         <span className="text-xs text-gray-400">

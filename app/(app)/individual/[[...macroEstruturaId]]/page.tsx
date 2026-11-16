@@ -1,7 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatNumber } from "@/lib/format";
 import { agruparPorTurno, pivotEstruturaTurno } from "@/lib/transform";
-import { isTurnoGrupoKey } from "@/lib/filters";
+import {
+  listaOuNada,
+  parseIdsParam,
+  parseQualis,
+  parseTurnoGrupos,
+} from "@/lib/filters";
 import { estruturasComRotulo, rotuloEstrutura } from "@/lib/estrutura";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ChartCard } from "@/components/ui/chart-card";
@@ -50,11 +55,9 @@ export default async function IndividualDetalhePage({
   const macroEstruturaId = macroParam?.[0];
   const sp = await searchParams;
 
-  const estruturaId = sp.estrutura || undefined;
-  const treinamentoId = sp.treinamento || undefined;
-  const turnoGrupo: string | undefined = isTurnoGrupoKey(sp.turno)
-    ? sp.turno
-    : undefined;
+  const estruturaIds = listaOuNada(parseIdsParam(sp.estrutura));
+  const treinamentoIds = listaOuNada(parseIdsParam(sp.treinamento));
+  const turnoGrupos = listaOuNada(parseTurnoGrupos(sp.turno));
   const sortBy: OrdemColuna = (ORDER_WHITELIST as readonly string[]).includes(
     sp.sort ?? "",
   )
@@ -74,13 +77,7 @@ export default async function IndividualDetalhePage({
   const isAdmin = profile?.role === "administrador";
 
   // Gestor só vê Qualis = Sim, travado (mesmo que tente forçar via URL).
-  const qualis = isAdmin
-    ? sp.qualis === "sim"
-      ? true
-      : sp.qualis === "nao"
-        ? false
-        : undefined
-    : true;
+  const qualis = parseQualis(sp.qualis, isAdmin);
 
   const [
     { data: macroEstruturasRaw },
@@ -97,33 +94,33 @@ export default async function IndividualDetalhePage({
       .select("id, codigo, nome, macro_estrutura_id")
       .order("nome"),
     supabase.rpc("rpc_treinamentos_por_estrutura", {
-      p_estrutura_id: estruturaId,
+      p_estrutura_ids: estruturaIds,
     }),
     supabase.rpc("rpc_grafico_macro_estrutura", {
       p_macro_ids: macroEstruturaId ? [macroEstruturaId] : undefined,
-      p_estrutura_id: estruturaId,
-      p_treinamento_id: treinamentoId,
+      p_estrutura_ids: estruturaIds,
+      p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
-      p_turno_grupo: turnoGrupo,
+      p_turno_grupos: turnoGrupos,
     }),
     supabase.rpc("rpc_pendencias_por_turno", {
       p_macro_estrutura_id: macroEstruturaId,
-      p_estrutura_id: estruturaId,
-      p_treinamento_id: treinamentoId,
+      p_estrutura_ids: estruturaIds,
+      p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
     }),
     supabase.rpc("rpc_pendencias_por_estrutura_turno", {
       p_macro_estrutura_id: macroEstruturaId,
-      p_estrutura_id: estruturaId,
-      p_treinamento_id: treinamentoId,
+      p_estrutura_ids: estruturaIds,
+      p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
     }),
     supabase.rpc("rpc_tabela_detalhada", {
       p_macro_estrutura_id: macroEstruturaId,
-      p_estrutura_id: estruturaId,
-      p_treinamento_id: treinamentoId,
+      p_estrutura_ids: estruturaIds,
+      p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
-      p_turno_grupo: turnoGrupo,
+      p_turno_grupos: turnoGrupos,
       p_order_by: sortBy,
       p_order_dir: sortDir,
       p_page: page,
@@ -191,9 +188,9 @@ export default async function IndividualDetalhePage({
   pdfParams.set("sort", sortBy);
   pdfParams.set("dir", sortDir);
   const pdfHref = `/individual/pdf?${pdfParams.toString()}`;
-  // Só a macro escolhida: oferece um ZIP com um PDF por estrutura.
+  // Só a macro escolhida, ou várias estruturas: oferece um ZIP com um PDF por estrutura.
   const zipHref =
-    macroEstruturaId && !sp.estrutura
+    (macroEstruturaId && !estruturaIds) || (estruturaIds?.length ?? 0) > 1
       ? `/individual/pdf?${pdfParams.toString()}&zip=1`
       : null;
 

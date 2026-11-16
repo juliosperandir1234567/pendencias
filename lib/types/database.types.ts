@@ -736,6 +736,9 @@ export type Database = {
           p_qualis?: boolean
           p_treinamento_id?: string
           p_turno_grupo?: string
+          p_estrutura_ids?: string[]
+          p_treinamento_ids?: string[]
+          p_turno_grupos?: string[]
         }
         Returns: {
           atual_pendencias: number
@@ -753,6 +756,9 @@ export type Database = {
           p_qualis?: boolean
           p_treinamento_id?: string
           p_turno_grupo?: string
+          p_estrutura_ids?: string[]
+          p_treinamento_ids?: string[]
+          p_turno_grupos?: string[]
         }
         Returns: {
           atual_pendencias: number
@@ -820,6 +826,9 @@ export type Database = {
           p_qualis?: boolean
           p_treinamento_id?: string
           p_turno_grupo?: string
+          p_estrutura_ids?: string[]
+          p_treinamento_ids?: string[]
+          p_turno_grupos?: string[]
         }
         Returns: {
           indice_conclusao: number
@@ -833,6 +842,8 @@ export type Database = {
           p_macro_estrutura_id?: string
           p_qualis?: boolean
           p_treinamento_id?: string
+          p_estrutura_ids?: string[]
+          p_treinamento_ids?: string[]
         }
         Returns: {
           codigo: string
@@ -848,6 +859,8 @@ export type Database = {
           p_macro_estrutura_id?: string
           p_qualis?: boolean
           p_treinamento_id?: string
+          p_estrutura_ids?: string[]
+          p_treinamento_ids?: string[]
         }
         Returns: {
           total: number
@@ -865,6 +878,9 @@ export type Database = {
           p_qualis?: boolean
           p_treinamento_id?: string
           p_turno_grupo?: string
+          p_estrutura_ids?: string[]
+          p_treinamento_ids?: string[]
+          p_turno_grupos?: string[]
         }
         Returns: {
           colaborador: string
@@ -876,7 +892,10 @@ export type Database = {
         }[]
       }
       rpc_treinamentos_por_estrutura: {
-        Args: { p_estrutura_id?: string }
+        Args: {
+          p_estrutura_id?: string
+          p_estrutura_ids?: string[]
+        }
         Returns: {
           id: string
           nome: string

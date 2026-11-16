@@ -2,13 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { zipSync } from "fflate";
 import { createClient } from "@/lib/supabase/server";
-import { isTurnoGrupoKey, TURNO_GRUPOS } from "@/lib/filters";
+import {
+  listaOuNada,
+  parseIdsParam,
+  parseQualis,
+  parseTurnoGrupos,
+  TURNO_GRUPOS,
+} from "@/lib/filters";
 import {
   RelatorioColaboradores,
   type GrupoEstrutura,
   type LinhaRelatorio,
 } from "@/lib/pdf/relatorio-colaboradores";
-import { estruturasComRotulo, rotuloEstrutura } from "@/lib/estrutura";
+import { estruturasComRotulo } from "@/lib/estrutura";
 
 const collatorNumerico = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
 
@@ -62,52 +68,47 @@ export async function GET(request: NextRequest) {
 
   const sp = request.nextUrl.searchParams;
   const macroEstruturaId = sp.get("macro") || undefined;
-  const estruturaId = sp.get("estrutura") || undefined;
-  const treinamentoId = sp.get("treinamento") || undefined;
-  const qualisParam = sp.get("qualis");
-  const qualis = isAdmin
-    ? qualisParam === "sim"
-      ? true
-      : qualisParam === "nao"
-        ? false
-        : undefined
-    : true;
-  const turnoGrupo = isTurnoGrupoKey(sp.get("turno")) ? sp.get("turno")! : undefined;
+  const estruturaIds = parseIdsParam(sp.get("estrutura") ?? undefined);
+  const treinamentoIds = parseIdsParam(sp.get("treinamento") ?? undefined);
+  const qualis = parseQualis(sp.get("qualis"), isAdmin);
+  const turnoGrupos = parseTurnoGrupos(sp.get("turno"));
   const orderBy = (ORDER_WHITELIST as readonly string[]).includes(sp.get("sort") ?? "")
     ? (sp.get("sort") as (typeof ORDER_WHITELIST)[number])
     : "colaborador";
   const orderDir = sp.get("dir") === "desc" ? "desc" : "asc";
 
   const tabelaArgs = {
-    p_treinamento_id: treinamentoId,
+    p_treinamento_ids: listaOuNada(treinamentoIds),
     p_qualis: qualis,
-    p_turno_grupo: turnoGrupo,
+    p_turno_grupos: listaOuNada(turnoGrupos),
     p_order_by: orderBy,
     p_order_dir: orderDir,
     p_page: 1,
     p_page_size: 50000,
   } as const;
 
-  // Só a macro escolhida: separa o relatório por estrutura, em ordem de nome.
-  const dividirPorEstrutura = !!macroEstruturaId && !estruturaId;
+  // Só a macro escolhida, ou várias estruturas: separa o relatório por
+  // estrutura, em ordem de nome.
+  const dividirPorEstrutura =
+    (!!macroEstruturaId && estruturaIds.length === 0) || estruturaIds.length > 1;
 
   const [
     { data: macro },
-    { data: estrutura },
-    { data: treinamento },
+    { data: estruturasEscolhidas },
+    { data: treinamentosEscolhidos },
     { data: estruturasDaMacro },
     { data: config },
   ] = await Promise.all([
     macroEstruturaId
       ? supabase.from("macro_estruturas").select("nome").eq("id", macroEstruturaId).maybeSingle()
       : Promise.resolve({ data: null }),
-    estruturaId
-      ? supabase.from("estruturas").select("codigo, nome").eq("id", estruturaId).maybeSingle()
+    estruturaIds.length
+      ? supabase.from("estruturas").select("id, codigo, nome").in("id", estruturaIds)
       : Promise.resolve({ data: null }),
-    treinamentoId
-      ? supabase.from("treinamentos").select("nome").eq("id", treinamentoId).maybeSingle()
+    treinamentoIds.length
+      ? supabase.from("treinamentos").select("nome").in("id", treinamentoIds).order("nome")
       : Promise.resolve({ data: null }),
-    dividirPorEstrutura
+    dividirPorEstrutura && estruturaIds.length === 0
       ? supabase
           .from("estruturas")
           .select("id, codigo, nome")
@@ -133,13 +134,15 @@ export async function GET(request: NextRequest) {
 
   let grupos: GrupoEstrutura[];
   if (dividirPorEstrutura) {
-    const lista = estruturasComRotulo(estruturasDaMacro ?? []);
+    const lista = estruturasComRotulo(
+      estruturaIds.length ? (estruturasEscolhidas ?? []) : (estruturasDaMacro ?? []),
+    );
     const resultados = await Promise.all(
       lista.map((e) =>
         supabase.rpc("rpc_tabela_detalhada", {
           ...tabelaArgs,
           p_macro_estrutura_id: macroEstruturaId,
-          p_estrutura_id: e.id,
+          p_estrutura_ids: [e.id],
         }),
       ),
     );
@@ -148,14 +151,22 @@ export async function GET(request: NextRequest) {
     const { data: tabelaRows } = await supabase.rpc("rpc_tabela_detalhada", {
       ...tabelaArgs,
       p_macro_estrutura_id: macroEstruturaId,
-      p_estrutura_id: estruturaId,
+      p_estrutura_ids: listaOuNada(estruturaIds),
     });
     grupos = [{ estrutura: null, linhas: mapear(tabelaRows) }];
   }
   const totalCount = grupos.reduce((soma, g) => soma + g.linhas.length, 0);
 
-  const turnoLabel = turnoGrupo
-    ? (TURNO_GRUPOS.find((g) => g.key === turnoGrupo)?.label ?? "Todos")
+  const turnoLabel = turnoGrupos.length
+    ? TURNO_GRUPOS.filter((g) => turnoGrupos.includes(g.key))
+        .map((g) => g.label)
+        .join(", ")
+    : "Todos";
+  const estruturaLabel = estruturasEscolhidas?.length
+    ? resumirLista(estruturasComRotulo(estruturasEscolhidas).map((e) => e.nome))
+    : "Todas";
+  const treinamentoLabel = treinamentosEscolhidos?.length
+    ? resumirLista(treinamentosEscolhidos.map((t) => t.nome))
     : "Todos";
 
   const logo = config?.logo_atualizado_em
@@ -166,8 +177,8 @@ export async function GET(request: NextRequest) {
 
   const props = {
     macroEstrutura: macro?.nome ?? "Todas",
-    estrutura: estrutura ? rotuloEstrutura(estrutura) : "Todas",
-    treinamento: treinamento?.nome ?? "Todos",
+    estrutura: estruturaLabel,
+    treinamento: treinamentoLabel,
     qualis: qualis === true ? "Sim" : qualis === false ? "Não" : "Todos",
     turno: turnoLabel,
     // O servidor (Vercel) roda em UTC; o relatório usa o horário de Brasília.
@@ -176,7 +187,7 @@ export async function GET(request: NextRequest) {
     totalCount,
     grupos,
     logo,
-    turnoGrupoFiltro: turnoGrupo,
+    turnoGruposFiltro: listaOuNada(turnoGrupos),
   };
 
   // ZIP: um PDF por estrutura da macro escolhida.
@@ -229,4 +240,10 @@ function nomeArquivo(texto: string) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 120);
+}
+
+/** Cabeçalho do PDF: até 2 nomes; acima disso, "A, B e mais N". */
+function resumirLista(nomes: string[]) {
+  if (nomes.length <= 2) return nomes.join(", ");
+  return `${nomes.slice(0, 2).join(", ")} e mais ${nomes.length - 2}`;
 }
