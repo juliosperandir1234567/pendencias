@@ -1,5 +1,33 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { signIn } from "./actions";
+
+/**
+ * Quem está na tela de login ainda não entrou, e o RLS de
+ * `configuracoes_sistema` não deixa visitante ler — a imagem de fundo nunca
+ * aparecia. Lê só a data da imagem pelo servidor, com a chave de serviço;
+ * se ela não estiver configurada, tenta com o cliente normal.
+ */
+async function lerConfigLogin(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+) {
+  try {
+    const { data } = await createAdminClient()
+      .from("configuracoes_sistema")
+      .select("login_bg_atualizado_em")
+      .eq("id", true)
+      .maybeSingle();
+    if (data) return data;
+  } catch {
+    // Sem SUPABASE_SERVICE_ROLE_KEY: segue com o cliente normal.
+  }
+  const { data } = await supabase
+    .from("configuracoes_sistema")
+    .select("login_bg_atualizado_em")
+    .eq("id", true)
+    .maybeSingle();
+  return data;
+}
 
 export default async function LoginPage({
   searchParams,
@@ -9,11 +37,7 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   const supabase = await createClient();
-  const { data: config } = await supabase
-    .from("configuracoes_sistema")
-    .select("login_bg_atualizado_em")
-    .eq("id", true)
-    .maybeSingle();
+  const config = await lerConfigLogin(supabase);
 
   const bgUrl = config?.login_bg_atualizado_em
     ? `${
