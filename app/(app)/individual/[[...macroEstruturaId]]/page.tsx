@@ -191,6 +191,11 @@ export default async function IndividualDetalhePage({
   pdfParams.set("sort", sortBy);
   pdfParams.set("dir", sortDir);
   const pdfHref = `/individual/pdf?${pdfParams.toString()}`;
+  // Só a macro escolhida: oferece um ZIP com um PDF por estrutura.
+  const zipHref =
+    macroEstruturaId && !sp.estrutura
+      ? `/individual/pdf?${pdfParams.toString()}&zip=1`
+      : null;
 
   return (
     <div className="space-y-4">
@@ -281,13 +286,24 @@ export default async function IndividualDetalhePage({
           <h3 className="text-sm font-semibold text-gray-700">
             Detalhamento por Colaborador
           </h3>
-          <a
-            href={pdfHref}
-            className="flex items-center gap-1.5 rounded-lg bg-brand-verde px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-verde-claro"
-          >
-            <IconDownload className="h-3.5 w-3.5" />
-            Exportar PDF
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            {zipHref && (
+              <a
+                href={zipHref}
+                className="flex items-center gap-1.5 rounded-lg border border-brand-verde px-3 py-1.5 text-xs font-semibold text-brand-verde transition hover:bg-emerald-50"
+              >
+                <IconDownload className="h-3.5 w-3.5" />
+                PDFs por estrutura (ZIP)
+              </a>
+            )}
+            <a
+              href={pdfHref}
+              className="flex items-center gap-1.5 rounded-lg bg-brand-verde px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-verde-claro"
+            >
+              <IconDownload className="h-3.5 w-3.5" />
+              Exportar PDF
+            </a>
+          </div>
         </div>
         <TabelaDetalhada
           rows={(tabelaRows ?? []).map((r) => ({

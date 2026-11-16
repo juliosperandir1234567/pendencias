@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
+import { zipSync } from "fflate";
 import { createClient } from "@/lib/supabase/server";
 import { isTurnoGrupoKey, TURNO_GRUPOS } from "@/lib/filters";
 import {
@@ -163,22 +164,55 @@ export async function GET(request: NextRequest) {
       )
     : null;
 
-  const buffer = await renderToBuffer(
-    RelatorioColaboradores({
-      macroEstrutura: macro?.nome ?? "Todas",
-      estrutura: estrutura ? rotuloEstrutura(estrutura) : "Todas",
-      treinamento: treinamento?.nome ?? "Todos",
-      qualis: qualis === true ? "Sim" : qualis === false ? "Não" : "Todos",
-      turno: turnoLabel,
-      // O servidor (Vercel) roda em UTC; o relatório usa o horário de Brasília.
-      geradoEm: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
-      geradoPor: profile?.nome ?? user.email ?? "—",
-      totalCount,
-      grupos,
-      logo,
-      turnoGrupoFiltro: turnoGrupo,
-    }),
-  );
+  const props = {
+    macroEstrutura: macro?.nome ?? "Todas",
+    estrutura: estrutura ? rotuloEstrutura(estrutura) : "Todas",
+    treinamento: treinamento?.nome ?? "Todos",
+    qualis: qualis === true ? "Sim" : qualis === false ? "Não" : "Todos",
+    turno: turnoLabel,
+    // O servidor (Vercel) roda em UTC; o relatório usa o horário de Brasília.
+    geradoEm: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+    geradoPor: profile?.nome ?? user.email ?? "—",
+    totalCount,
+    grupos,
+    logo,
+    turnoGrupoFiltro: turnoGrupo,
+  };
+
+  // ZIP: um PDF por estrutura da macro escolhida.
+  if (sp.get("zip") === "1" && dividirPorEstrutura) {
+    const arquivos: Record<string, Uint8Array> = {};
+    for (const grupo of grupos.filter((g) => g.linhas.length > 0)) {
+      const pdf = await renderToBuffer(
+        RelatorioColaboradores({
+          ...props,
+          estrutura: grupo.estrutura ?? "Todas",
+          totalCount: grupo.linhas.length,
+          // Uma estrutura por arquivo: a faixa no topo fica redundante.
+          grupos: [{ estrutura: null, linhas: grupo.linhas }],
+        }),
+      );
+      let nome = nomeArquivo(`${props.macroEstrutura} - ${grupo.estrutura}`);
+      for (let n = 2; arquivos[`${nome}.pdf`]; n++) nome = `${nome} (${n})`;
+      arquivos[`${nome}.pdf`] = new Uint8Array(pdf);
+    }
+    if (!Object.keys(arquivos).length) {
+      return NextResponse.json(
+        { erro: "Nenhuma pendência no filtro aplicado." },
+        { status: 404 },
+      );
+    }
+    const zip = zipSync(arquivos, { level: 6 });
+    const nomeZip = encodeURIComponent(`${nomeArquivo(props.macroEstrutura)} - PDFs por estrutura.zip`);
+    return new NextResponse(zip, {
+      headers: {
+        "Content-Type": "application/zip",
+        "Content-Disposition": `attachment; filename="pdfs-por-estrutura.zip"; filename*=UTF-8''${nomeZip}`,
+      },
+    });
+  }
+
+  const buffer = await renderToBuffer(RelatorioColaboradores(props));
 
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
@@ -186,4 +220,13 @@ export async function GET(request: NextRequest) {
       "Content-Disposition": `attachment; filename="detalhamento-colaboradores.pdf"`,
     },
   });
+}
+
+/** Remove caracteres que o Windows não aceita em nome de arquivo. */
+function nomeArquivo(texto: string) {
+  return texto
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120);
 }
