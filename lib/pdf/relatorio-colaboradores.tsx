@@ -1,4 +1,4 @@
-import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet, Svg, Circle, Path } from "@react-pdf/renderer";
 import { TURNO_GRUPOS, TURNO_LABELS, type Turno } from "@/lib/filters";
 import { formatNumber } from "@/lib/format";
 
@@ -23,6 +23,8 @@ export interface RelatorioColaboradoresProps {
   grupos: GrupoEstrutura[];
   /** Logo da empresa (PNG/JPG) já baixada. */
   logo?: { data: Buffer; format: "png" | "jpg" } | null;
+  /** Turno filtrado (chave de TURNO_GRUPOS); sem filtro, mostra todos os turnos. */
+  turnoGrupoFiltro?: string;
 }
 
 export interface GrupoEstrutura {
@@ -183,11 +185,32 @@ const styles = StyleSheet.create({
   cellMatricula: { color: MUTED, fontFamily: "Helvetica-Bold" },
   cellColaborador: { fontFamily: "Helvetica-Bold" },
   cellTreina: { color: MUTED },
-  colMatricula: { width: "10%" },
-  colColaborador: { width: "28%" },
+  colMatricula: { width: "11%" },
+  colColaborador: { width: "33%", paddingRight: 8 },
   colTreina: { width: "10%" },
-  colTreinamento: { width: "37%", paddingRight: 6 },
-  colTurno: { width: "15%" },
+  colTreinamento: { width: "46%" },
+  parabens: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#e6f4ea",
+    borderWidth: 1,
+    borderColor: "#9fd3ae",
+    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 14,
+  },
+  parabensTurno: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 0.8,
+    color: "#1c5c34",
+  },
+  parabensTexto: {
+    fontSize: 9,
+    color: "#1c5c34",
+    marginTop: 2,
+  },
   pill: {
     fontSize: 7,
     fontFamily: "Helvetica-Bold",
@@ -290,8 +313,11 @@ interface SecaoTurno {
 }
 
 /** Agrupa as linhas em Diurno/Fixo → Vespertino → Noturno (→ Sem turno). */
-function agruparPorTurno(linhas: LinhaRelatorio[]): SecaoTurno[] {
-  const secoes: SecaoTurno[] = TURNO_GRUPOS.map((g) => ({
+function agruparPorTurno(linhas: LinhaRelatorio[], turnoGrupoFiltro?: string): SecaoTurno[] {
+  const grupos = turnoGrupoFiltro
+    ? TURNO_GRUPOS.filter((g) => g.key === turnoGrupoFiltro)
+    : TURNO_GRUPOS;
+  const secoes: SecaoTurno[] = grupos.map((g) => ({
     key: g.key,
     titulo: `TURNO ${g.turnos.map((t) => TURNO_LABELS[t]).join(" / ").toUpperCase()}`,
     cor: TURNO_COR[g.turnos[0]],
@@ -308,11 +334,11 @@ function agruparPorTurno(linhas: LinhaRelatorio[]): SecaoTurno[] {
       linhas: semTurno,
     });
   }
-  return secoes.filter((sec) => sec.linhas.length > 0);
+  // Turnos vazios ficam: viram o aviso de "parabéns".
+  return secoes;
 }
 
 function LinhaTabela({ r, i }: { r: LinhaRelatorio; i: number }) {
-  const cor = r.turno ? TURNO_COR[r.turno] : null;
   return (
     <View
       style={[styles.row, i % 2 === 1 ? styles.rowZebra : undefined]}
@@ -328,18 +354,36 @@ function LinhaTabela({ r, i }: { r: LinhaRelatorio; i: number }) {
         {r.id_treina}
       </Text>
       <Text style={[styles.cell, styles.colTreinamento]}>{r.treinamento}</Text>
-      <View style={styles.colTurno}>
-        {r.turno && cor && (
-          <Text style={[styles.pill, { backgroundColor: cor.bg, color: cor.fg }]}>
-            {TURNO_LABELS[r.turno]}
-          </Text>
-        )}
+    </View>
+  );
+}
+
+function ParabensTurno({ titulo }: { titulo: string }) {
+  return (
+    <View style={styles.parabens} wrap={false}>
+      <Svg width={22} height={22} viewBox="0 0 24 24" style={{ marginRight: 10 }}>
+        <Circle cx="12" cy="12" r="11" fill="#1e7a46" />
+        <Path
+          d="M6.5 12.5l3.5 3.5 7.5-8"
+          stroke="#ffffff"
+          strokeWidth={2.4}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+      <View>
+        <Text style={styles.parabensTurno}>{titulo}</Text>
+        <Text style={styles.parabensTexto}>
+          Parabéns! Nenhuma pendência de treinamento neste turno.
+        </Text>
       </View>
     </View>
   );
 }
 
 function SecaoTurnoView({ secao }: { secao: SecaoTurno }) {
+  if (secao.linhas.length === 0) return <ParabensTurno titulo={secao.titulo} />;
   return (
     <View style={{ marginBottom: 14 }}>
       {/* Faixa + cabeçalho não ficam sozinhos no pé da página. */}
@@ -368,7 +412,6 @@ function CabecalhoColunasSecao() {
       <Text style={[styles.headerCell, styles.colColaborador]}>COLABORADOR</Text>
       <Text style={[styles.headerCell, styles.colTreina]}>ID. TREINA</Text>
       <Text style={[styles.headerCell, styles.colTreinamento]}>TREINAMENTO</Text>
-      <Text style={[styles.headerCell, styles.colTurno]}>TURNO</Text>
     </View>
   );
 }
@@ -384,6 +427,7 @@ export function RelatorioColaboradores({
   totalCount,
   grupos,
   logo,
+  turnoGrupoFiltro,
 }: RelatorioColaboradoresProps) {
   const gruposComDados = grupos.filter((g) => g.linhas.length > 0);
   // Sem linhas: ainda gera uma página com o cabeçalho e o rodapé.
@@ -414,7 +458,7 @@ export function RelatorioColaboradores({
               </View>
             )}
             {grupo ? (
-              agruparPorTurno(grupo.linhas).map((secao) => (
+              agruparPorTurno(grupo.linhas, turnoGrupoFiltro).map((secao) => (
                 <SecaoTurnoView key={secao.key} secao={secao} />
               ))
             ) : (

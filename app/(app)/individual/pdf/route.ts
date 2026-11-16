@@ -176,6 +176,7 @@ export async function GET(request: NextRequest) {
       totalCount,
       grupos,
       logo,
+      turnoGrupoFiltro: turnoGrupo,
     }),
   );
 
