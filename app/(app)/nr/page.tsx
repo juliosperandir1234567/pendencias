@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatNumber } from "@/lib/format";
+import { compararNome } from "@/lib/sort";
 import { isNrStatus } from "@/lib/nr";
 import { KpiCard } from "@/components/ui/kpi-card";
 import {
@@ -150,15 +151,7 @@ export default async function EspelhoNrPage({
       aberta_solicitacao: g.aberta_solicitacao,
       sem_treinamento: g.sem_treinamento,
     }))
-    .sort(
-      (a, b) =>
-        b.em_dia +
-        b.a_vencer +
-        b.vencido +
-        b.aberta_solicitacao +
-        b.sem_treinamento -
-        (a.em_dia + a.a_vencer + a.vencido + a.aberta_solicitacao + a.sem_treinamento),
-    );
+    .sort(compararNome);
 
   function buildHref(patch: Record<string, string>) {
     const urlParams = new URLSearchParams();

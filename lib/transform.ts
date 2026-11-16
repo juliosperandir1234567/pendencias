@@ -1,4 +1,5 @@
 import { TURNO_GRUPOS, type Turno } from "@/lib/filters";
+import { compararNome } from "@/lib/sort";
 
 export interface EstruturaTurnoRow {
   estrutura_id: string;
@@ -32,9 +33,7 @@ export function pivotEstruturaTurno(
     entry.total += row.total;
   }
 
-  return Array.from(map.values()).sort(
-    (a, b) => (b.total as number) - (a.total as number),
-  );
+  return Array.from(map.values()).sort(compararNome);
 }
 
 export interface TurnoGrupoTotal {

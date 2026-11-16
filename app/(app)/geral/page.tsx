@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { isTurnoGrupoKey, parseIdsParam } from "@/lib/filters";
 import { formatNumber, formatPercent } from "@/lib/format";
+import { compararNome } from "@/lib/sort";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ChartCard } from "@/components/ui/chart-card";
 import {
@@ -105,7 +106,7 @@ export default async function GeralPage({
       inicio: g.baseline_pendencias,
       atual: g.atual_pendencias,
     }))
-    .sort((a, b) => b.atual - a.atual);
+    .sort(compararNome);
 
   const dadosEstruturaCompletos = (graficoEstruturaRaw ?? [])
     .map((g) => ({
@@ -115,7 +116,10 @@ export default async function GeralPage({
       atual: g.atual_pendencias,
     }))
     .sort((a, b) => b.atual - a.atual);
-  const dadosEstrutura = dadosEstruturaCompletos.slice(0, TOP_ESTRUTURAS);
+  // Seleciona as maiores pelo volume atual, mas exibe em ordem de nome.
+  const dadosEstrutura = dadosEstruturaCompletos
+    .slice(0, TOP_ESTRUTURAS)
+    .sort(compararNome);
 
   const totalInicio = dadosMacro.reduce((soma, item) => soma + item.inicio, 0);
   const totalAtual =
@@ -203,8 +207,8 @@ export default async function GeralPage({
           title="Pendências por Estrutura"
           subtitle={
             dadosEstruturaCompletos.length > dadosEstrutura.length
-              ? `Top ${dadosEstrutura.length} de ${dadosEstruturaCompletos.length} estruturas, ordenadas da maior para a menor`
-              : "Início x Atual, ordenadas da maior para a menor"
+              ? `Top ${dadosEstrutura.length} de ${dadosEstruturaCompletos.length} estruturas com mais pendências, em ordem de nome`
+              : "Início x Atual, em ordem de nome"
           }
         >
           <LegendaInicioAtual />
