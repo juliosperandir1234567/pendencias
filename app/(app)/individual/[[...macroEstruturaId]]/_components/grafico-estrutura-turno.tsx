@@ -43,7 +43,7 @@ export function GraficoEstruturaTurno({
       <div className="overflow-x-auto px-2">
         <div
           style={{
-            height: 170,
+            height: 210,
             minWidth: dados.length > 6 ? dados.length * 90 : "100%",
           }}
         >
@@ -63,14 +63,14 @@ export function GraficoEstruturaTurno({
               dataKey="nome"
               tick={{ fontSize: 10, fill: "#374151" }}
               tickFormatter={(value: string) =>
-                dados.length > 4 && value.length > 8
-                  ? `${value.slice(0, 7)}…`
+                dados.length > 4 && value.length > 18
+                  ? `${value.slice(0, 17)}…`
                   : value
               }
               interval={0}
               angle={dados.length > 4 ? -35 : 0}
               textAnchor={dados.length > 4 ? "end" : "middle"}
-              height={dados.length > 4 ? 56 : 30}
+              height={dados.length > 4 ? 86 : 30}
             />
             <YAxis hide type="number" allowDecimals={false} />
             <Tooltip

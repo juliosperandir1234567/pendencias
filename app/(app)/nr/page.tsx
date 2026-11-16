@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatNumber } from "@/lib/format";
 import { compararNome } from "@/lib/sort";
+import { estruturasComRotulo } from "@/lib/estrutura";
 import { isNrStatus } from "@/lib/nr";
 import { KpiCard } from "@/components/ui/kpi-card";
 import {
@@ -101,7 +102,7 @@ export default async function EspelhoNrPage({
     supabase.from("macro_estruturas").select("id, nome").order("nome"),
     supabase
       .from("estruturas")
-      .select("id, nome, macro_estrutura_id")
+      .select("id, codigo, nome, macro_estrutura_id")
       .order("nome"),
     supabase.from("nr_treinamentos").select("id, nome").order("nome"),
     supabase.rpc("rpc_espelho_nr_status_adm_opcoes"),
@@ -219,7 +220,7 @@ export default async function EspelhoNrPage({
       <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
         <FiltrosNr
           macroEstruturas={macroEstruturasRaw ?? []}
-          estruturas={estruturasRaw ?? []}
+          estruturas={estruturasComRotulo(estruturasRaw ?? [])}
           treinamentos={treinamentosRaw ?? []}
           statusAdmOpcoes={(statusAdmRaw ?? []).map((s) => s.status_adm)}
         />

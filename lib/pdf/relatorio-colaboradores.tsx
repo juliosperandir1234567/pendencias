@@ -1,4 +1,4 @@
-import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import { TURNO_GRUPOS, TURNO_LABELS, type Turno } from "@/lib/filters";
 import { formatNumber } from "@/lib/format";
 
@@ -19,6 +19,15 @@ export interface RelatorioColaboradoresProps {
   geradoEm: string;
   geradoPor: string;
   totalCount: number;
+  /** Sem estrutura escolhida mas com macro: um grupo por estrutura. */
+  grupos: GrupoEstrutura[];
+  /** Logo da empresa (PNG/JPG) já baixada. */
+  logo?: { data: Buffer; format: "png" | "jpg" } | null;
+}
+
+export interface GrupoEstrutura {
+  /** Rótulo da estrutura, ou null quando o relatório não é dividido por estrutura. */
+  estrutura: string | null;
   linhas: LinhaRelatorio[];
 }
 
@@ -58,6 +67,41 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "rgba(255,255,255,0.14)",
     marginRight: 10,
+  },
+  logoBox: {
+    width: 64,
+    height: 30,
+    borderRadius: 4,
+    backgroundColor: "#ffffff",
+    padding: 3,
+    marginRight: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logo: {
+    maxWidth: 58,
+    maxHeight: 24,
+    objectFit: "contain",
+  },
+  estruturaBanda: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: VERDE,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 4,
+    marginBottom: 10,
+  },
+  estruturaTitulo: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    color: "#ffffff",
+  },
+  estruturaTotal: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: "#bcd9c4",
   },
   eyebrow: {
     fontSize: 7,
@@ -167,10 +211,25 @@ const styles = StyleSheet.create({
   },
 });
 
-function Letterhead({ geradoEm, geradoPor }: { geradoEm: string; geradoPor: string }) {
+function Letterhead({
+  geradoEm,
+  geradoPor,
+  logo,
+}: {
+  geradoEm: string;
+  geradoPor: string;
+  logo?: RelatorioColaboradoresProps["logo"];
+}) {
   return (
     <View style={styles.letterhead} fixed>
-      <View style={styles.mark} />
+      {logo ? (
+        <View style={styles.logoBox}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text */}
+          <Image style={styles.logo} src={{ data: logo.data, format: logo.format }} />
+        </View>
+      ) : (
+        <View style={styles.mark} />
+      )}
       <View style={{ flex: 1 }}>
         <Text style={styles.eyebrow}>DASHBOARD DE PENDÊNCIAS · USINA</Text>
         <Text style={styles.title}>Detalhamento por Colaborador</Text>
@@ -252,18 +311,6 @@ function agruparPorTurno(linhas: LinhaRelatorio[]): SecaoTurno[] {
   return secoes.filter((sec) => sec.linhas.length > 0);
 }
 
-function CabecalhoColunas() {
-  return (
-    <View style={styles.headerRow} fixed>
-      <Text style={[styles.headerCell, styles.colMatricula]}>MATRÍCULA</Text>
-      <Text style={[styles.headerCell, styles.colColaborador]}>COLABORADOR</Text>
-      <Text style={[styles.headerCell, styles.colTreina]}>ID. TREINA</Text>
-      <Text style={[styles.headerCell, styles.colTreinamento]}>TREINAMENTO</Text>
-      <Text style={[styles.headerCell, styles.colTurno]}>TURNO</Text>
-    </View>
-  );
-}
-
 function LinhaTabela({ r, i }: { r: LinhaRelatorio; i: number }) {
   const cor = r.turno ? TURNO_COR[r.turno] : null;
   return (
@@ -292,6 +339,40 @@ function LinhaTabela({ r, i }: { r: LinhaRelatorio; i: number }) {
   );
 }
 
+function SecaoTurnoView({ secao }: { secao: SecaoTurno }) {
+  return (
+    <View style={{ marginBottom: 14 }}>
+      {/* Faixa + cabeçalho não ficam sozinhos no pé da página. */}
+      <View wrap={false} minPresenceAhead={40}>
+        <View style={[styles.secaoTurno, { backgroundColor: secao.cor.bg }]}>
+          <Text style={[styles.secaoTurnoTitulo, { color: secao.cor.fg }]}>
+            {secao.titulo}
+          </Text>
+          <Text style={[styles.secaoTurnoTotal, { color: secao.cor.fg }]}>
+            {formatNumber(secao.linhas.length)} pendência(s)
+          </Text>
+        </View>
+        <CabecalhoColunasSecao />
+      </View>
+      {secao.linhas.map((r, i) => (
+        <LinhaTabela key={`${r.matricula}-${r.id_treina}-${i}`} r={r} i={i} />
+      ))}
+    </View>
+  );
+}
+
+function CabecalhoColunasSecao() {
+  return (
+    <View style={styles.headerRow}>
+      <Text style={[styles.headerCell, styles.colMatricula]}>MATRÍCULA</Text>
+      <Text style={[styles.headerCell, styles.colColaborador]}>COLABORADOR</Text>
+      <Text style={[styles.headerCell, styles.colTreina]}>ID. TREINA</Text>
+      <Text style={[styles.headerCell, styles.colTreinamento]}>TREINAMENTO</Text>
+      <Text style={[styles.headerCell, styles.colTurno]}>TURNO</Text>
+    </View>
+  );
+}
+
 export function RelatorioColaboradores({
   macroEstrutura,
   estrutura,
@@ -301,17 +382,20 @@ export function RelatorioColaboradores({
   geradoEm,
   geradoPor,
   totalCount,
-  linhas,
+  grupos,
+  logo,
 }: RelatorioColaboradoresProps) {
-  const secoes = agruparPorTurno(linhas);
+  const gruposComDados = grupos.filter((g) => g.linhas.length > 0);
   // Sem linhas: ainda gera uma página com o cabeçalho e o rodapé.
-  const paginas: (SecaoTurno | null)[] = secoes.length ? secoes : [null];
+  const paginas: (GrupoEstrutura | null)[] = gruposComDados.length
+    ? gruposComDados
+    : [null];
 
   return (
     <Document title="Detalhamento por Colaborador">
-      {paginas.map((secao) => (
-        <Page key={secao?.key ?? "vazio"} size="A4" style={styles.page}>
-          <Letterhead geradoEm={geradoEm} geradoPor={geradoPor} />
+      {paginas.map((grupo, gi) => (
+        <Page key={gi} size="A4" style={styles.page}>
+          <Letterhead geradoEm={geradoEm} geradoPor={geradoPor} logo={logo} />
           <MetaStrip
             macroEstrutura={macroEstrutura}
             estrutura={estrutura}
@@ -321,27 +405,21 @@ export function RelatorioColaboradores({
           />
 
           <View style={styles.table}>
-            {secao ? (
-              <>
-                <View
-                  style={[styles.secaoTurno, { backgroundColor: secao.cor.bg }]}
-                  fixed
-                >
-                  <Text style={[styles.secaoTurnoTitulo, { color: secao.cor.fg }]}>
-                    {secao.titulo}
-                  </Text>
-                  <Text style={[styles.secaoTurnoTotal, { color: secao.cor.fg }]}>
-                    {formatNumber(secao.linhas.length)} pendência(s)
-                  </Text>
-                </View>
-                <CabecalhoColunas />
-                {secao.linhas.map((r, i) => (
-                  <LinhaTabela key={`${r.matricula}-${r.id_treina}-${i}`} r={r} i={i} />
-                ))}
-              </>
+            {grupo?.estrutura && (
+              <View style={styles.estruturaBanda} fixed>
+                <Text style={styles.estruturaTitulo}>{grupo.estrutura}</Text>
+                <Text style={styles.estruturaTotal}>
+                  {formatNumber(grupo.linhas.length)} pendência(s)
+                </Text>
+              </View>
+            )}
+            {grupo ? (
+              agruparPorTurno(grupo.linhas).map((secao) => (
+                <SecaoTurnoView key={secao.key} secao={secao} />
+              ))
             ) : (
               <>
-                <CabecalhoColunas />
+                <CabecalhoColunasSecao />
                 <Text style={{ marginTop: 12, color: MUTED }}>
                   Nenhuma pendência no filtro aplicado.
                 </Text>

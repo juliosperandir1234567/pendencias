@@ -60,23 +60,23 @@ export function GraficoNrMacro({ dados }: { dados: BarraNrDado[] }) {
 
   return (
     <div className="overflow-x-auto px-2">
-      <div style={{ height: 260, minWidth }}>
+      <div style={{ height: 300, minWidth }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={dados}
-            margin={{ top: 8, right: 8, bottom: largo ? 54 : 8, left: 8 }}
+            margin={{ top: 8, right: 8, bottom: largo ? 24 : 8, left: 8 }}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f0" />
             <XAxis
               dataKey="nome"
               tick={{ fontSize: 10, fill: "#374151" }}
               tickFormatter={(value: string) =>
-                largo && value.length > 8 ? `${value.slice(0, 7)}…` : value
+                largo && value.length > 18 ? `${value.slice(0, 17)}…` : value
               }
               interval={0}
               angle={largo ? -35 : 0}
               textAnchor={largo ? "end" : "middle"}
-              height={largo ? 56 : 24}
+              height={largo ? 86 : 24}
             />
             <YAxis hide />
             <Tooltip

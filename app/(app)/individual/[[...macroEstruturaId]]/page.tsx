@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatNumber } from "@/lib/format";
 import { agruparPorTurno, pivotEstruturaTurno } from "@/lib/transform";
 import { isTurnoGrupoKey } from "@/lib/filters";
+import { estruturasComRotulo, rotuloEstrutura } from "@/lib/estrutura";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ChartCard } from "@/components/ui/chart-card";
 import {
@@ -93,7 +94,7 @@ export default async function IndividualDetalhePage({
     supabase.from("macro_estruturas").select("id, nome").order("nome"),
     supabase
       .from("estruturas")
-      .select("id, nome, macro_estrutura_id")
+      .select("id, codigo, nome, macro_estrutura_id")
       .order("nome"),
     supabase.rpc("rpc_treinamentos_por_estrutura", {
       p_estrutura_id: estruturaId,
@@ -135,11 +136,16 @@ export default async function IndividualDetalhePage({
     ? macroEstruturas.find((m) => m.id === macroEstruturaId)
     : undefined;
 
-  const estruturas = macroEstruturaId
-    ? (estruturasTodas ?? []).filter(
-        (e) => e.macro_estrutura_id === macroEstruturaId,
-      )
-    : (estruturasTodas ?? []);
+  const estruturas = estruturasComRotulo(
+    macroEstruturaId
+      ? (estruturasTodas ?? []).filter(
+          (e) => e.macro_estrutura_id === macroEstruturaId,
+        )
+      : (estruturasTodas ?? []),
+  );
+  const codigoPorEstrutura = new Map(
+    (estruturasTodas ?? []).map((e) => [e.id, e.codigo]),
+  );
 
   const totalCount = tabelaRows?.[0]?.total_count ?? 0;
   const totalInicio = (graficoMacroRaw ?? []).reduce(
@@ -259,7 +265,13 @@ export default async function IndividualDetalhePage({
         </ChartCard>
         <ChartCard title="Pendências por Estrutura">
           <GraficoEstruturaTurno
-            dados={pivotEstruturaTurno(estruturaTurnoRows ?? [])}
+            dados={pivotEstruturaTurno(estruturaTurnoRows ?? []).map((e) => ({
+              ...e,
+              nome: rotuloEstrutura({
+                codigo: codigoPorEstrutura.get(e.estrutura_id),
+                nome: e.nome,
+              }),
+            }))}
           />
         </ChartCard>
       </div>

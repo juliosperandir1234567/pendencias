@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isTurnoGrupoKey, parseIdsParam } from "@/lib/filters";
 import { formatNumber, formatPercent } from "@/lib/format";
 import { compararNome } from "@/lib/sort";
+import { estruturasComRotulo, rotuloEstrutura } from "@/lib/estrutura";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ChartCard } from "@/components/ui/chart-card";
 import {
@@ -67,7 +68,7 @@ export default async function GeralPage({
     supabase.from("macro_estruturas").select("id, nome").order("nome"),
     supabase
       .from("estruturas")
-      .select("id, nome, macro_estrutura_id")
+      .select("id, codigo, nome, macro_estrutura_id")
       .order("nome"),
     supabase.rpc("rpc_treinamentos_por_estrutura", {
       p_estrutura_id: estruturaId,
@@ -95,7 +96,10 @@ export default async function GeralPage({
   ]);
 
   const macroEstruturas = macroEstruturasRaw ?? [];
-  const estruturas = estruturasRaw ?? [];
+  const estruturas = estruturasComRotulo(estruturasRaw ?? []);
+  const codigoPorEstrutura = new Map(
+    (estruturasRaw ?? []).map((e) => [e.id, e.codigo]),
+  );
   const treinamentos = treinamentosRaw ?? [];
   const indicadores = indicadoresRaw?.[0];
 
@@ -119,7 +123,11 @@ export default async function GeralPage({
   // Seleciona as maiores pelo volume atual, mas exibe em ordem de nome.
   const dadosEstrutura = dadosEstruturaCompletos
     .slice(0, TOP_ESTRUTURAS)
-    .sort(compararNome);
+    .sort(compararNome)
+    .map((e) => ({
+      ...e,
+      nome: rotuloEstrutura({ codigo: codigoPorEstrutura.get(e.id), nome: e.nome }),
+    }));
 
   const totalInicio = dadosMacro.reduce((soma, item) => soma + item.inicio, 0);
   const totalAtual =
