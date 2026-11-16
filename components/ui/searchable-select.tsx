@@ -28,6 +28,16 @@ export function SearchableSelect({
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Mostra a seleção na hora, sem esperar o servidor recarregar a página.
+  // Quando o valor vindo da URL muda, ele volta a ser a fonte da verdade.
+  const valueKey = value.join(",");
+  const [prevValueKey, setPrevValueKey] = useState(valueKey);
+  const [localValue, setLocalValue] = useState(value);
+  if (valueKey !== prevValueKey) {
+    setPrevValueKey(valueKey);
+    setLocalValue(value);
+  }
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (
@@ -56,20 +66,25 @@ export function SearchableSelect({
   }, [options, query]);
 
   const selectedLabels = options
-    .filter((o) => value.includes(o.value))
+    .filter((o) => localValue.includes(o.value))
     .map((o) => o.label);
+
+  function commit(next: string[]) {
+    setLocalValue(next);
+    onChange(next);
+  }
 
   function toggle(optionValue: string) {
     if (multiple) {
-      if (value.includes(optionValue)) {
-        onChange(value.filter((v) => v !== optionValue));
-      } else {
-        onChange([...value, optionValue]);
-      }
+      commit(
+        localValue.includes(optionValue)
+          ? localValue.filter((v) => v !== optionValue)
+          : [...localValue, optionValue],
+      );
     } else {
-      onChange(value[0] === optionValue ? [] : [optionValue]);
       setOpen(false);
       setQuery("");
+      commit(localValue[0] === optionValue ? [] : [optionValue]);
     }
   }
 
@@ -114,11 +129,11 @@ export function SearchableSelect({
             />
           </div>
           <ul className="max-h-64 overflow-y-auto py-1 text-sm">
-            {multiple && value.length > 0 && (
+            {multiple && localValue.length > 0 && (
               <li>
                 <button
                   type="button"
-                  onClick={() => onChange([])}
+                  onClick={() => commit([])}
                   className="w-full px-3 py-1.5 text-left text-xs font-medium text-brand-azul hover:bg-gray-50"
                 >
                   Limpar seleção
@@ -129,7 +144,7 @@ export function SearchableSelect({
               <li className="px-3 py-2 text-gray-400">Nenhum resultado</li>
             )}
             {filtered.map((option) => {
-              const selected = value.includes(option.value);
+              const selected = localValue.includes(option.value);
               return (
                 <li key={option.value}>
                   <button

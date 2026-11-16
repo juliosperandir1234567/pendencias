@@ -1,5 +1,5 @@
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
-import { TURNO_LABELS, type Turno } from "@/lib/filters";
+import { TURNO_GRUPOS, TURNO_LABELS, type Turno } from "@/lib/filters";
 import { formatNumber } from "@/lib/format";
 
 export interface LinhaRelatorio {
@@ -27,6 +27,7 @@ const VERDE_CLARO = "#1e7a46";
 const MUTED = "#6b7a70";
 const MUTED_2 = "#92a099";
 const LINHA = "#e4e8e2";
+const LINHA_TABELA = "#b9c2bc";
 const ZEBRA = "#f6f8f5";
 
 const TURNO_COR: Record<Turno, { bg: string; fg: string }> = {
@@ -110,8 +111,26 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: LINHA,
+    borderBottomWidth: 0.8,
+    borderBottomColor: LINHA_TABELA,
+  },
+  secaoTurno: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  secaoTurnoTitulo: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 0.8,
+  },
+  secaoTurnoTotal: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
   },
   rowZebra: {
     backgroundColor: ZEBRA,
@@ -204,6 +223,75 @@ function MetaStrip({
   );
 }
 
+interface SecaoTurno {
+  key: string;
+  titulo: string;
+  cor: { bg: string; fg: string };
+  linhas: LinhaRelatorio[];
+}
+
+/** Agrupa as linhas em Diurno/Fixo → Vespertino → Noturno (→ Sem turno). */
+function agruparPorTurno(linhas: LinhaRelatorio[]): SecaoTurno[] {
+  const secoes: SecaoTurno[] = TURNO_GRUPOS.map((g) => ({
+    key: g.key,
+    titulo: `TURNO ${g.turnos.map((t) => TURNO_LABELS[t]).join(" / ").toUpperCase()}`,
+    cor: TURNO_COR[g.turnos[0]],
+    linhas: linhas.filter((l) => l.turno !== null && g.turnos.includes(l.turno)),
+  }));
+  const semTurno = linhas.filter(
+    (l) => l.turno === null || !TURNO_GRUPOS.some((g) => g.turnos.includes(l.turno!)),
+  );
+  if (semTurno.length) {
+    secoes.push({
+      key: "sem_turno",
+      titulo: "SEM TURNO",
+      cor: { bg: ZEBRA, fg: MUTED },
+      linhas: semTurno,
+    });
+  }
+  return secoes.filter((sec) => sec.linhas.length > 0);
+}
+
+function CabecalhoColunas() {
+  return (
+    <View style={styles.headerRow} fixed>
+      <Text style={[styles.headerCell, styles.colMatricula]}>MATRÍCULA</Text>
+      <Text style={[styles.headerCell, styles.colColaborador]}>COLABORADOR</Text>
+      <Text style={[styles.headerCell, styles.colTreina]}>ID. TREINA</Text>
+      <Text style={[styles.headerCell, styles.colTreinamento]}>TREINAMENTO</Text>
+      <Text style={[styles.headerCell, styles.colTurno]}>TURNO</Text>
+    </View>
+  );
+}
+
+function LinhaTabela({ r, i }: { r: LinhaRelatorio; i: number }) {
+  const cor = r.turno ? TURNO_COR[r.turno] : null;
+  return (
+    <View
+      style={[styles.row, i % 2 === 1 ? styles.rowZebra : undefined]}
+      wrap={false}
+    >
+      <Text style={[styles.cell, styles.cellMatricula, styles.colMatricula]}>
+        {r.matricula}
+      </Text>
+      <Text style={[styles.cell, styles.cellColaborador, styles.colColaborador]}>
+        {r.colaborador}
+      </Text>
+      <Text style={[styles.cell, styles.cellTreina, styles.colTreina]}>
+        {r.id_treina}
+      </Text>
+      <Text style={[styles.cell, styles.colTreinamento]}>{r.treinamento}</Text>
+      <View style={styles.colTurno}>
+        {r.turno && cor && (
+          <Text style={[styles.pill, { backgroundColor: cor.bg, color: cor.fg }]}>
+            {TURNO_LABELS[r.turno]}
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
 export function RelatorioColaboradores({
   macroEstrutura,
   estrutura,
@@ -215,72 +303,63 @@ export function RelatorioColaboradores({
   totalCount,
   linhas,
 }: RelatorioColaboradoresProps) {
+  const secoes = agruparPorTurno(linhas);
+  // Sem linhas: ainda gera uma página com o cabeçalho e o rodapé.
+  const paginas: (SecaoTurno | null)[] = secoes.length ? secoes : [null];
+
   return (
     <Document title="Detalhamento por Colaborador">
-      <Page size="A4" style={styles.page}>
-        <Letterhead geradoEm={geradoEm} geradoPor={geradoPor} />
-        <MetaStrip
-          macroEstrutura={macroEstrutura}
-          estrutura={estrutura}
-          treinamento={treinamento}
-          qualis={qualis}
-          turno={turno}
-        />
+      {paginas.map((secao) => (
+        <Page key={secao?.key ?? "vazio"} size="A4" style={styles.page}>
+          <Letterhead geradoEm={geradoEm} geradoPor={geradoPor} />
+          <MetaStrip
+            macroEstrutura={macroEstrutura}
+            estrutura={estrutura}
+            treinamento={treinamento}
+            qualis={qualis}
+            turno={turno}
+          />
 
-        <View style={styles.table}>
-          <View style={styles.headerRow} fixed>
-            <Text style={[styles.headerCell, styles.colMatricula]}>MATRÍCULA</Text>
-            <Text style={[styles.headerCell, styles.colColaborador]}>COLABORADOR</Text>
-            <Text style={[styles.headerCell, styles.colTreina]}>ID. TREINA</Text>
-            <Text style={[styles.headerCell, styles.colTreinamento]}>TREINAMENTO</Text>
-            <Text style={[styles.headerCell, styles.colTurno]}>TURNO</Text>
+          <View style={styles.table}>
+            {secao ? (
+              <>
+                <View
+                  style={[styles.secaoTurno, { backgroundColor: secao.cor.bg }]}
+                  fixed
+                >
+                  <Text style={[styles.secaoTurnoTitulo, { color: secao.cor.fg }]}>
+                    {secao.titulo}
+                  </Text>
+                  <Text style={[styles.secaoTurnoTotal, { color: secao.cor.fg }]}>
+                    {formatNumber(secao.linhas.length)} pendência(s)
+                  </Text>
+                </View>
+                <CabecalhoColunas />
+                {secao.linhas.map((r, i) => (
+                  <LinhaTabela key={`${r.matricula}-${r.id_treina}-${i}`} r={r} i={i} />
+                ))}
+              </>
+            ) : (
+              <>
+                <CabecalhoColunas />
+                <Text style={{ marginTop: 12, color: MUTED }}>
+                  Nenhuma pendência no filtro aplicado.
+                </Text>
+              </>
+            )}
           </View>
 
-          {linhas.map((r, i) => {
-            const cor = r.turno ? TURNO_COR[r.turno] : null;
-            return (
-              <View
-                key={`${r.matricula}-${r.id_treina}-${i}`}
-                style={[styles.row, i % 2 === 1 ? styles.rowZebra : undefined]}
-                wrap={false}
-              >
-                <Text style={[styles.cell, styles.cellMatricula, styles.colMatricula]}>
-                  {r.matricula}
-                </Text>
-                <Text style={[styles.cell, styles.cellColaborador, styles.colColaborador]}>
-                  {r.colaborador}
-                </Text>
-                <Text style={[styles.cell, styles.cellTreina, styles.colTreina]}>
-                  {r.id_treina}
-                </Text>
-                <Text style={[styles.cell, styles.colTreinamento]}>{r.treinamento}</Text>
-                <View style={styles.colTurno}>
-                  {r.turno && cor && (
-                    <Text
-                      style={[
-                        styles.pill,
-                        { backgroundColor: cor.bg, color: cor.fg },
-                      ]}
-                    >
-                      {TURNO_LABELS[r.turno]}
-                    </Text>
-                  )}
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
-        <View style={styles.footer} fixed>
-          <Text>{formatNumber(totalCount)} pendência(s) no filtro aplicado</Text>
-          <Text
-            render={({ pageNumber, totalPages }) =>
-              `Página ${pageNumber} de ${totalPages}`
-            }
-          />
-          <Text>Dashboard de Pendências — Usina</Text>
-        </View>
-      </Page>
+          <View style={styles.footer} fixed>
+            <Text>{formatNumber(totalCount)} pendência(s) no filtro aplicado</Text>
+            <Text
+              render={({ pageNumber, totalPages }) =>
+                `Página ${pageNumber} de ${totalPages}`
+              }
+            />
+            <Text>Dashboard de Pendências — Usina</Text>
+          </View>
+        </Page>
+      ))}
     </Document>
   );
 }
