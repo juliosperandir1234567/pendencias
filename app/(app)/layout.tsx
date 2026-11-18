@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessao } from "@/lib/auth";
 import { signOut } from "@/app/login/actions";
 import {
   IconBuilding,
@@ -17,25 +18,18 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [sessao, { data: config }] = await Promise.all([
+    getSessao(),
+    supabase
+      .from("configuracoes_sistema")
+      .select("logo_atualizado_em")
+      .eq("id", true)
+      .maybeSingle(),
+  ]);
 
-  if (!user) {
+  if (!sessao) {
     redirect("/login");
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("nome, role")
-    .eq("id", user.id)
-    .single();
-
-  const { data: config } = await supabase
-    .from("configuracoes_sistema")
-    .select("logo_atualizado_em")
-    .eq("id", true)
-    .maybeSingle();
 
   const logoUrl = config?.logo_atualizado_em
     ? `${
@@ -44,8 +38,8 @@ export default async function AppLayout({
       }?v=${new Date(config.logo_atualizado_em).getTime()}`
     : null;
 
-  const isAdmin = profile?.role === "administrador";
-  const nomeUsuario = profile?.nome ?? user.email;
+  const isAdmin = sessao.isAdmin;
+  const nomeUsuario = sessao.nome ?? sessao.email;
   const papel = isAdmin ? "Administrador" : "Gestor";
 
   const logo = (

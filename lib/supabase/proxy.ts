@@ -26,9 +26,10 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims valida o token localmente (chaves assimétricas) e renova a
+  // sessão se precisar, sem ir ao servidor de autenticação a cada página.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? data.claims : null;
 
   const isAuthRoute = request.nextUrl.pathname.startsWith("/login");
 

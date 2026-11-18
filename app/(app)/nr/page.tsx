@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSessao } from "@/lib/auth";
 import { formatNumber } from "@/lib/format";
 import { compararNome } from "@/lib/sort";
 import { estruturasComRotulo } from "@/lib/estrutura";
@@ -82,13 +83,8 @@ export default async function EspelhoNrPage({
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = user
-    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
-    : { data: null };
-  const isAdmin = profile?.role === "administrador";
+  // Compartilhado com o layout: não repete a consulta de usuário/perfil.
+  const isAdmin = (await getSessao())?.isAdmin ?? false;
 
   const [
     { data: macroEstruturasRaw },

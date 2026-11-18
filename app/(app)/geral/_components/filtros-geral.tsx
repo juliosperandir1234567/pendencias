@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { IndicadorAtualizando } from "@/components/ui/indicador-atualizando";
 import { parseIdsParam, QUALIS_OPCOES, TURNO_GRUPOS } from "@/lib/filters";
 
 interface MacroEstruturaOption {
@@ -147,6 +148,7 @@ export function FiltrosGeral({
         <span className="text-xs text-gray-400">
           {isPending ? "Atualizando…" : ""}
         </span>
+        <IndicadorAtualizando ativo={isPending} />
       </div>
     </div>
   );

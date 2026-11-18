@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSessao } from "@/lib/auth";
 import { formatNumber } from "@/lib/format";
 import { agruparPorTurno, pivotEstruturaTurno } from "@/lib/transform";
 import { listaOuNada, parseIdsParam, parseQualis } from "@/lib/filters";
@@ -68,43 +69,42 @@ export default async function IndividualDetalhePage({
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = user
-    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
-    : { data: null };
-  const isAdmin = profile?.role === "administrador";
+  // Compartilhado com o layout: não repete a consulta de usuário/perfil.
+  const isAdmin = (await getSessao())?.isAdmin ?? false;
 
   // Gestor só vê Qualis = Sim, travado (mesmo que tente forçar via URL).
   const qualis = parseQualis(sp.qualis, isAdmin);
 
-  const [{ data: macroEstruturasRaw }, { data: estruturasTodas }] =
-    await Promise.all([
-      supabase.from("macro_estruturas").select("id, nome").order("nome"),
-      supabase
-        .from("estruturas")
-        .select("id, codigo, nome, macro_estrutura_id")
-        .order("nome"),
-    ]);
+  const consultaMacros = supabase
+    .from("macro_estruturas")
+    .select("id, nome")
+    .order("nome");
+  const consultaEstruturas = supabase
+    .from("estruturas")
+    .select("id, codigo, nome, macro_estrutura_id")
+    .order("nome");
 
-  const estruturasDoEscopo = macroIds.length
-    ? (estruturasTodas ?? []).filter((e) =>
-        macroIds.includes(e.macro_estrutura_id),
-      )
-    : (estruturasTodas ?? []);
+  // Só com várias macros é preciso saber as estruturas antes das outras
+  // consultas; senão, tudo vai junto numa rodada só.
+  const estruturasAntes =
+    macroIds.length > 1 ? (await consultaEstruturas).data : null;
 
   // As funções do banco só aceitam uma macro; com várias, recebem a lista de
   // estruturas dessas macros.
+  const estruturasDasMacros = (estruturasAntes ?? []).filter((e) =>
+    macroIds.includes(e.macro_estrutura_id),
+  );
   const estruturaIds =
     estruturaIdsFiltro ??
     (macroIds.length > 1
-      ? estruturasDoEscopo.length
-        ? estruturasDoEscopo.map((e) => e.id)
+      ? estruturasDasMacros.length
+        ? estruturasDasMacros.map((e) => e.id)
         : [UUID_NENHUM]
       : undefined);
 
   const [
+    { data: macroEstruturasRaw },
+    { data: estruturasTodas },
     { data: treinamentosRaw },
     { data: graficoMacroRaw },
     { data: turnoRows },
@@ -112,6 +112,8 @@ export default async function IndividualDetalhePage({
     { data: tabelaRows },
     { data: fluxoRaw, error: fluxoErro },
   ] = await Promise.all([
+    consultaMacros,
+    estruturasAntes ? Promise.resolve({ data: estruturasAntes }) : consultaEstruturas,
     supabase.rpc("rpc_treinamentos_por_estrutura", {
       p_estrutura_ids: estruturaIds,
     }),
@@ -163,6 +165,11 @@ export default async function IndividualDetalhePage({
         ? macrosEscolhidas.map((m) => m.nome).join(" e ")
         : `${macrosEscolhidas.length} Macro Estruturas`;
 
+  const estruturasDoEscopo = macroIds.length
+    ? (estruturasTodas ?? []).filter((e) =>
+        macroIds.includes(e.macro_estrutura_id),
+      )
+    : (estruturasTodas ?? []);
   const estruturas = estruturasComRotulo(estruturasDoEscopo);
   const codigoPorEstrutura = new Map(
     (estruturasTodas ?? []).map((e) => [e.id, e.codigo]),
