@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSessao } from "@/lib/auth";
+import { Suspense } from "react";
+import { CardsFluxo, CardsFluxoCarregando } from "@/components/ui/cards-fluxo";
 import {
   listaOuNada,
   parseIdsParam,
@@ -16,9 +18,6 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { ChartCard } from "@/components/ui/chart-card";
 import {
   IconBuilding,
-  IconFlag,
-  IconGraduationCap,
-  IconTrendingDown,
 } from "@/components/ui/icons";
 import { DestaqueReducao } from "@/components/ui/destaque-reducao";
 import {
@@ -61,7 +60,6 @@ export default async function GeralPage({
     { data: indicadoresRaw },
     { data: graficoMacroRaw },
     { data: graficoEstruturaRaw },
-    { data: fluxoRaw, error: fluxoErro },
     { data: comPendenciaRaw, error: comPendenciaErro },
   ] = await Promise.all([
     supabase.from("macro_estruturas").select("id, nome").order("nome"),
@@ -87,14 +85,6 @@ export default async function GeralPage({
       p_turno_grupos: turnoGrupos,
     }),
     supabase.rpc("rpc_grafico_estrutura", {
-      p_macro_ids: macroIds.length ? macroIds : undefined,
-      p_estrutura_ids: estruturaIds,
-      p_treinamento_ids: treinamentoIds,
-      p_qualis: qualis,
-      p_turno_grupos: turnoGrupos,
-    }),
-    // Resolvidas x Novas desde o início (sql/2026-11-18_fluxo_pendencias.sql).
-    supabase.rpc("rpc_fluxo_pendencias", {
       p_macro_ids: macroIds.length ? macroIds : undefined,
       p_estrutura_ids: estruturaIds,
       p_treinamento_ids: treinamentoIds,
@@ -150,8 +140,6 @@ export default async function GeralPage({
     indicadores?.total_pendencias ??
     dadosMacro.reduce((soma, item) => soma + item.atual, 0);
   const estruturasComPendencia = dadosEstrutura.filter((e) => e.atual > 0).length;
-  // Sem a função do banco, cai para o saldo (Início − Atual), com o nome certo.
-  const fluxo = !fluxoErro ? fluxoRaw?.[0] : undefined;
 
   return (
     <div className="space-y-4">
@@ -177,40 +165,20 @@ export default async function GeralPage({
           atual={totalAtual}
           className="sm:col-span-2 lg:col-span-2"
         />
-        {fluxo ? (
-          <>
-            <KpiCard
-              label="Resolvidas desde o início"
-              value={formatNumber(fluxo.resolvidas)}
-              accent="verde"
-              hint="Pendências do início já feitas"
-              icon={<IconGraduationCap />}
-            />
-            <KpiCard
-              label="Novas desde o início"
-              value={formatNumber(fluxo.novas)}
-              accent={fluxo.novas > 0 ? "ambar" : "muted"}
-              hint="Surgiram depois do marco"
-              icon={<IconFlag />}
-            />
-          </>
-        ) : (
-          <>
-            <KpiCard
-              label="Redução líquida"
-              value={formatNumber(totalInicio - totalAtual)}
-              accent={totalInicio - totalAtual >= 0 ? "verde" : "vermelho"}
-              hint="Início − Atual"
-              icon={<IconTrendingDown />}
-            />
-            <KpiCard
-              label="Pendências no início"
-              value={formatNumber(totalInicio)}
-              accent="azul"
-              icon={<IconFlag />}
-            />
-          </>
-        )}
+        <Suspense fallback={<CardsFluxoCarregando quantidade={2} />}>
+          <CardsFluxo
+            modo="dois"
+            inicio={totalInicio}
+            atual={totalAtual}
+            filtros={{
+              p_macro_ids: macroIds.length ? macroIds : undefined,
+              p_estrutura_ids: estruturaIds,
+              p_treinamento_ids: treinamentoIds,
+              p_qualis: qualis,
+              p_turno_grupos: turnoGrupos,
+            }}
+          />
+        </Suspense>
         <KpiCard
           label="Estruturas com pendências"
           value={formatNumber(estruturasComPendencia)}

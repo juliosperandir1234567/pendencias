@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSessao } from "@/lib/auth";
+import { Suspense } from "react";
+import { CardsFluxo, CardsFluxoCarregando } from "@/components/ui/cards-fluxo";
 import { formatNumber } from "@/lib/format";
 import { agruparPorTurno, pivotEstruturaTurno } from "@/lib/transform";
 import { listaOuNada, parseIdsParam, parseQualis } from "@/lib/filters";
@@ -15,7 +17,6 @@ import {
   IconClock,
   IconDownload,
   IconFlag,
-  IconGraduationCap,
   IconUsers,
 } from "@/components/ui/icons";
 import { FiltrosIndividual } from "./_components/filtros-individual";
@@ -114,7 +115,6 @@ export default async function IndividualDetalhePage({
     { data: turnoRows },
     { data: estruturaTurnoRows },
     { data: tabelaRows },
-    { data: fluxoRaw, error: fluxoErro },
     { data: comPendenciaRaw, error: comPendenciaErro },
   ] = await Promise.all([
     consultaMacros,
@@ -149,13 +149,6 @@ export default async function IndividualDetalhePage({
       p_order_dir: sortDir,
       p_page: page,
       p_page_size: PAGE_SIZE,
-    }),
-    // Resolvidas x Novas desde o início (sql/2026-11-18_fluxo_pendencias.sql).
-    supabase.rpc("rpc_fluxo_pendencias", {
-      p_macro_ids: listaOuNada(macroIds),
-      p_estrutura_ids: estruturaIds,
-      p_treinamento_ids: treinamentoIds,
-      p_qualis: qualis,
     }),
     // Gestor só enxerga Qualis = Sim; o filtro de Qualis do admin não mexe nas listas.
     supabase.rpc("rpc_estruturas_com_pendencia", {
@@ -198,8 +191,6 @@ export default async function IndividualDetalhePage({
     (soma, g) => soma + g.atual_pendencias,
     0,
   );
-  // Sem a função do banco, cai para o saldo (Início − Atual), com o nome certo.
-  const fluxo = !fluxoErro ? fluxoRaw?.[0] : undefined;
 
   const dadosTurno = agruparPorTurno(turnoRows ?? []);
 
@@ -272,23 +263,19 @@ export default async function IndividualDetalhePage({
           accent="verde"
           icon={<IconUsers />}
         />
-        {fluxo ? (
-          <KpiCard
-            label="Resolvidas desde o início"
-            value={formatNumber(fluxo.resolvidas)}
-            accent="verde"
-            hint={`+${formatNumber(fluxo.novas)} novas desde o início`}
-            icon={<IconGraduationCap />}
+        <Suspense fallback={<CardsFluxoCarregando quantidade={1} />}>
+          <CardsFluxo
+            modo="um"
+            inicio={totalInicio}
+            atual={totalAtualEscopo}
+            filtros={{
+              p_macro_ids: listaOuNada(macroIds),
+              p_estrutura_ids: estruturaIds,
+              p_treinamento_ids: treinamentoIds,
+              p_qualis: qualis,
+            }}
           />
-        ) : (
-          <KpiCard
-            label="Redução líquida"
-            value={formatNumber(totalInicio - totalAtualEscopo)}
-            accent={totalInicio - totalAtualEscopo >= 0 ? "verde" : "vermelho"}
-            hint="Início − Atual"
-            icon={<IconGraduationCap />}
-          />
-        )}
+        </Suspense>
         <KpiCard
           label={
             comPendenciaErro
