@@ -32,22 +32,22 @@ export function KpiCard({
   icon,
 }: KpiCardProps) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-white p-2 shadow-sm">
+    <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
       {icon && (
         <span
-          className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${ACCENT_BADGE[accent]}`}
+          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${ACCENT_BADGE[accent]}`}
         >
           {icon}
         </span>
       )}
       <div className="min-w-0">
-        <p className="line-clamp-2 text-[9px] font-medium uppercase leading-tight tracking-wide text-gray-500">
+        <p className="line-clamp-2 text-[11px] font-medium uppercase leading-tight tracking-wide text-gray-500">
           {label}
         </p>
-        <p className={`text-base font-bold leading-tight ${ACCENT_TEXT[accent]}`}>
+        <p className={`text-2xl font-bold leading-tight ${ACCENT_TEXT[accent]}`}>
           {value}
         </p>
-        {hint && <p className="truncate text-[10px] text-gray-400">{hint}</p>}
+        {hint && <p className="truncate text-xs text-gray-400">{hint}</p>}
       </div>
     </div>
   );

@@ -818,6 +818,19 @@ export type Database = {
           total_treinamentos: number
         }[]
       }
+      rpc_fluxo_pendencias: {
+        Args: {
+          p_macro_ids?: string[]
+          p_estrutura_ids?: string[]
+          p_treinamento_ids?: string[]
+          p_qualis?: boolean
+          p_turno_grupos?: string[]
+        }
+        Returns: {
+          resolvidas: number
+          novas: number
+        }[]
+      }
       rpc_indicadores_geral: {
         Args: {
           p_estrutura_id?: string

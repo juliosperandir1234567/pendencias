@@ -5,8 +5,7 @@ import {
   parseQualis,
   parseTurnoGrupos,
 } from "@/lib/filters";
-import { formatNumber, formatPercent } from "@/lib/format";
-import { compararNome } from "@/lib/sort";
+import { formatNumber } from "@/lib/format";
 import { estruturasComRotulo, rotuloEstrutura } from "@/lib/estrutura";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ChartCard } from "@/components/ui/chart-card";
@@ -15,17 +14,16 @@ import {
   IconFlag,
   IconGraduationCap,
   IconTrendingDown,
-  IconUsers,
 } from "@/components/ui/icons";
-import { LegendaInicioAtual } from "@/components/ui/legenda-inicio-atual";
-import { GraficoBarrasComparativo } from "@/components/charts/grafico-barras-comparativo";
-import { FiltrosGeral } from "./_components/filtros-geral";
+import { DestaqueReducao } from "@/components/ui/destaque-reducao";
 import {
-  GraficoMacroAtualClicavel,
-  GraficoMacroClicavel,
-} from "./_components/grafico-macro-clicavel";
+  AlertaPioras,
+  RankingPendencias,
+  type ItemRanking,
+} from "@/components/charts/ranking-pendencias";
+import { FiltrosGeral } from "./_components/filtros-geral";
 
-const TOP_ESTRUTURAS = 25;
+const TOP_ESTRUTURAS = 15;
 
 export default async function GeralPage({
   searchParams,
@@ -64,6 +62,7 @@ export default async function GeralPage({
     { data: indicadoresRaw },
     { data: graficoMacroRaw },
     { data: graficoEstruturaRaw },
+    { data: fluxoRaw, error: fluxoErro },
   ] = await Promise.all([
     supabase.from("macro_estruturas").select("id, nome").order("nome"),
     supabase
@@ -94,6 +93,14 @@ export default async function GeralPage({
       p_qualis: qualis,
       p_turno_grupos: turnoGrupos,
     }),
+    // Resolvidas x Novas desde o início (sql/2026-11-18_fluxo_pendencias.sql).
+    supabase.rpc("rpc_fluxo_pendencias", {
+      p_macro_ids: macroIds.length ? macroIds : undefined,
+      p_estrutura_ids: estruturaIds,
+      p_treinamento_ids: treinamentoIds,
+      p_qualis: qualis,
+      p_turno_grupos: turnoGrupos,
+    }),
   ]);
 
   const macroEstruturas = macroEstruturasRaw ?? [];
@@ -104,51 +111,43 @@ export default async function GeralPage({
   const treinamentos = treinamentosRaw ?? [];
   const indicadores = indicadoresRaw?.[0];
 
-  const dadosMacro = (graficoMacroRaw ?? [])
-    .map((g) => ({
-      id: g.macro_estrutura_id,
-      nome: g.nome,
-      inicio: g.baseline_pendencias,
-      atual: g.atual_pendencias,
-    }))
-    .sort(compararNome);
+  const macroPorEstrutura = new Map(
+    (estruturasRaw ?? []).map((e) => [e.id, e.macro_estrutura_id]),
+  );
 
-  const dadosEstruturaCompletos = (graficoEstruturaRaw ?? [])
-    .map((g) => ({
+  const dadosMacro: ItemRanking[] = (graficoMacroRaw ?? []).map((g) => ({
+    id: g.macro_estrutura_id,
+    nome: g.nome,
+    inicio: g.baseline_pendencias,
+    atual: g.atual_pendencias,
+    href: `/individual/${g.macro_estrutura_id}`,
+  }));
+
+  const dadosEstrutura: ItemRanking[] = (graficoEstruturaRaw ?? []).map((g) => {
+    const macroId = macroPorEstrutura.get(g.estrutura_id);
+    return {
       id: g.estrutura_id,
-      nome: g.nome,
+      nome: rotuloEstrutura({ codigo: codigoPorEstrutura.get(g.estrutura_id), nome: g.nome }),
       inicio: g.baseline_pendencias,
       atual: g.atual_pendencias,
-    }))
-    .sort((a, b) => b.atual - a.atual);
-  // Seleciona as maiores pelo volume atual, mas exibe em ordem de nome.
-  const dadosEstrutura = dadosEstruturaCompletos
-    .slice(0, TOP_ESTRUTURAS)
-    .sort(compararNome)
-    .map((e) => ({
-      ...e,
-      nome: rotuloEstrutura({ codigo: codigoPorEstrutura.get(e.id), nome: e.nome }),
-    }));
+      href: macroId ? `/individual/${macroId}?estrutura=${g.estrutura_id}` : undefined,
+    };
+  });
 
   const totalInicio = dadosMacro.reduce((soma, item) => soma + item.inicio, 0);
   const totalAtual =
     indicadores?.total_pendencias ??
     dadosMacro.reduce((soma, item) => soma + item.atual, 0);
-  const variacao =
-    totalInicio > 0 ? ((totalAtual - totalInicio) / totalInicio) * 100 : null;
-  const melhorou = variacao !== null && variacao <= 0;
-  const treinamentosConcluidos = Math.max(0, totalInicio - totalAtual);
-  const estruturasAfetadas = dadosEstruturaCompletos.filter(
-    (item) => item.atual > 0,
-  ).length;
+  const estruturasComPendencia = dadosEstrutura.filter((e) => e.atual > 0).length;
+  // Sem a função do banco, cai para o saldo (Início − Atual), com o nome certo.
+  const fluxo = !fluxoErro ? fluxoRaw?.[0] : undefined;
 
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold text-brand-verde">Visão Geral</h2>
         <p className="text-xs text-gray-500">
-          Comparativo de pendências de treinamento por estrutura, desde o
-          marco de início.
+          Pendências de treinamento desde o marco de início.
         </p>
       </div>
 
@@ -161,73 +160,69 @@ export default async function GeralPage({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-        <KpiCard
-          label="Total de Pendências"
-          value={formatNumber(totalAtual)}
-          accent="verde"
-          icon={<IconUsers />}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <DestaqueReducao
+          inicio={totalInicio}
+          atual={totalAtual}
+          className="sm:col-span-2 lg:col-span-2"
         />
+        {fluxo ? (
+          <>
+            <KpiCard
+              label="Resolvidas desde o início"
+              value={formatNumber(fluxo.resolvidas)}
+              accent="verde"
+              hint="Pendências do início já feitas"
+              icon={<IconGraduationCap />}
+            />
+            <KpiCard
+              label="Novas desde o início"
+              value={formatNumber(fluxo.novas)}
+              accent={fluxo.novas > 0 ? "ambar" : "muted"}
+              hint="Surgiram depois do marco"
+              icon={<IconFlag />}
+            />
+          </>
+        ) : (
+          <>
+            <KpiCard
+              label="Redução líquida"
+              value={formatNumber(totalInicio - totalAtual)}
+              accent={totalInicio - totalAtual >= 0 ? "verde" : "vermelho"}
+              hint="Início − Atual"
+              icon={<IconTrendingDown />}
+            />
+            <KpiCard
+              label="Pendências no início"
+              value={formatNumber(totalInicio)}
+              accent="azul"
+              icon={<IconFlag />}
+            />
+          </>
+        )}
         <KpiCard
-          label="Pendências no Início"
-          value={formatNumber(totalInicio)}
-          accent="azul"
-          icon={<IconFlag />}
-        />
-        <KpiCard
-          label="Variação desde o Início"
-          value={
-            variacao === null
-              ? "—"
-              : `${variacao > 0 ? "+" : ""}${formatPercent(variacao)}`
-          }
-          accent={variacao === null ? "muted" : melhorou ? "verde" : "muted"}
-          hint={
-            variacao === null
-              ? "Marco de início não definido"
-              : melhorou
-                ? "Redução de pendências"
-                : "Aumento de pendências"
-          }
-          icon={<IconTrendingDown />}
-        />
-        <KpiCard
-          label="Treinamentos Concluídos"
-          value={formatNumber(treinamentosConcluidos)}
-          accent="verde"
-          hint="Início − Atual"
-          icon={<IconGraduationCap />}
-        />
-        <KpiCard
-          label="Estruturas Afetadas"
-          value={formatNumber(estruturasAfetadas)}
+          label="Estruturas com pendências"
+          value={formatNumber(estruturasComPendencia)}
           accent="muted"
-          hint="Com pendências no recorte atual"
+          hint={`de ${formatNumber(dadosEstrutura.length)} no recorte`}
           icon={<IconBuilding />}
         />
       </div>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <ChartCard
-          title="Pendências Atuais por Macro Estrutura"
-          subtitle="Clique numa barra para ver o detalhamento"
+          title="Ranking por Macro Estrutura"
+          subtitle="Clique para ver o detalhamento"
         >
-          <GraficoMacroAtualClicavel dados={dadosMacro} />
-        </ChartCard>
-        <ChartCard title="Pendências por Macro Estrutura" subtitle="Início x Atual">
-          <LegendaInicioAtual />
-          <GraficoMacroClicavel dados={dadosMacro} />
+          <AlertaPioras itens={dadosMacro} rotulo="macro" />
+          <RankingPendencias itens={dadosMacro} />
         </ChartCard>
         <ChartCard
-          title="Pendências por Estrutura"
-          subtitle={
-            dadosEstruturaCompletos.length > dadosEstrutura.length
-              ? `Top ${dadosEstrutura.length} de ${dadosEstruturaCompletos.length} estruturas com mais pendências, em ordem de nome`
-              : "Início x Atual, em ordem de nome"
-          }
+          title={`Top ${TOP_ESTRUTURAS} Estruturas`}
+          subtitle="Com mais pendências atuais"
         >
-          <LegendaInicioAtual />
-          <GraficoBarrasComparativo dados={dadosEstrutura} />
+          <AlertaPioras itens={dadosEstrutura} rotulo="estrutura" />
+          <RankingPendencias itens={dadosEstrutura} limite={TOP_ESTRUTURAS} />
         </ChartCard>
       </div>
     </div>

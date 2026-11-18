@@ -110,6 +110,7 @@ export default async function IndividualDetalhePage({
     { data: turnoRows },
     { data: estruturaTurnoRows },
     { data: tabelaRows },
+    { data: fluxoRaw, error: fluxoErro },
   ] = await Promise.all([
     supabase.rpc("rpc_treinamentos_por_estrutura", {
       p_estrutura_ids: estruturaIds,
@@ -142,6 +143,13 @@ export default async function IndividualDetalhePage({
       p_page: page,
       p_page_size: PAGE_SIZE,
     }),
+    // Resolvidas x Novas desde o início (sql/2026-11-18_fluxo_pendencias.sql).
+    supabase.rpc("rpc_fluxo_pendencias", {
+      p_macro_ids: listaOuNada(macroIds),
+      p_estrutura_ids: estruturaIds,
+      p_treinamento_ids: treinamentoIds,
+      p_qualis: qualis,
+    }),
   ]);
 
   const macroEstruturas = macroEstruturasRaw ?? [];
@@ -169,7 +177,8 @@ export default async function IndividualDetalhePage({
     (soma, g) => soma + g.atual_pendencias,
     0,
   );
-  const treinamentosConcluidos = Math.max(0, totalInicio - totalAtualEscopo);
+  // Sem a função do banco, cai para o saldo (Início − Atual), com o nome certo.
+  const fluxo = !fluxoErro ? fluxoRaw?.[0] : undefined;
 
   const dadosTurno = agruparPorTurno(turnoRows ?? []);
 
@@ -237,18 +246,28 @@ export default async function IndividualDetalhePage({
           icon={<IconFlag />}
         />
         <KpiCard
-          label="Pendências Atual"
+          label="Pendências Atuais"
           value={formatNumber(totalAtualEscopo)}
           accent="verde"
           icon={<IconUsers />}
         />
-        <KpiCard
-          label="Treinamentos Concluídos"
-          value={formatNumber(treinamentosConcluidos)}
-          accent="verde"
-          hint="Início − Atual"
-          icon={<IconGraduationCap />}
-        />
+        {fluxo ? (
+          <KpiCard
+            label="Resolvidas desde o início"
+            value={formatNumber(fluxo.resolvidas)}
+            accent="verde"
+            hint={`+${formatNumber(fluxo.novas)} novas desde o início`}
+            icon={<IconGraduationCap />}
+          />
+        ) : (
+          <KpiCard
+            label="Redução líquida"
+            value={formatNumber(totalInicio - totalAtualEscopo)}
+            accent={totalInicio - totalAtualEscopo >= 0 ? "verde" : "vermelho"}
+            hint="Início − Atual"
+            icon={<IconGraduationCap />}
+          />
+        )}
         <KpiCard
           label={
             macroIds.length === 1
