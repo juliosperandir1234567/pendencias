@@ -3,7 +3,11 @@ import { getSessao } from "@/lib/auth";
 import { formatNumber } from "@/lib/format";
 import { agruparPorTurno, pivotEstruturaTurno } from "@/lib/transform";
 import { listaOuNada, parseIdsParam, parseQualis } from "@/lib/filters";
-import { estruturasComRotulo, rotuloEstrutura } from "@/lib/estrutura";
+import {
+  estruturasComRotulo,
+  rotuloEstrutura,
+  soComPendencia,
+} from "@/lib/estrutura";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ChartCard } from "@/components/ui/chart-card";
 import {
@@ -111,6 +115,7 @@ export default async function IndividualDetalhePage({
     { data: estruturaTurnoRows },
     { data: tabelaRows },
     { data: fluxoRaw, error: fluxoErro },
+    { data: comPendenciaRaw, error: comPendenciaErro },
   ] = await Promise.all([
     consultaMacros,
     estruturasAntes ? Promise.resolve({ data: estruturasAntes }) : consultaEstruturas,
@@ -152,9 +157,20 @@ export default async function IndividualDetalhePage({
       p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
     }),
+    // Gestor só enxerga Qualis = Sim; o filtro de Qualis do admin não mexe nas listas.
+    supabase.rpc("rpc_estruturas_com_pendencia", {
+      p_qualis: isAdmin ? undefined : true,
+    }),
   ]);
 
-  const macroEstruturas = macroEstruturasRaw ?? [];
+  // Filtros e card de estruturas consideram só o que tem pendência atual.
+  const opcoes = soComPendencia(
+    macroEstruturasRaw ?? [],
+    estruturasTodas ?? [],
+    comPendenciaErro ? null : (comPendenciaRaw ?? []),
+    [...macroIds, ...(estruturaIdsFiltro ?? [])],
+  );
+  const macroEstruturas = opcoes.macros;
   const macrosEscolhidas = macroEstruturas.filter((m) =>
     macroIds.includes(m.id),
   );
@@ -166,10 +182,8 @@ export default async function IndividualDetalhePage({
         : `${macrosEscolhidas.length} Macro Estruturas`;
 
   const estruturasDoEscopo = macroIds.length
-    ? (estruturasTodas ?? []).filter((e) =>
-        macroIds.includes(e.macro_estrutura_id),
-      )
-    : (estruturasTodas ?? []);
+    ? opcoes.estruturas.filter((e) => macroIds.includes(e.macro_estrutura_id))
+    : opcoes.estruturas;
   const estruturas = estruturasComRotulo(estruturasDoEscopo);
   const codigoPorEstrutura = new Map(
     (estruturasTodas ?? []).map((e) => [e.id, e.codigo]),
@@ -277,11 +291,13 @@ export default async function IndividualDetalhePage({
         )}
         <KpiCard
           label={
-            macroIds.length === 1
-              ? "Estruturas nesta Macro"
-              : macroIds.length > 1
-                ? "Estruturas nas Macros"
-                : "Estruturas"
+            comPendenciaErro
+              ? macroIds.length === 1
+                ? "Estruturas nesta Macro"
+                : macroIds.length > 1
+                  ? "Estruturas nas Macros"
+                  : "Estruturas"
+              : "Estruturas com pendências"
           }
           value={formatNumber(estruturas.length)}
           accent="azul"

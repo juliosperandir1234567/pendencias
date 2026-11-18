@@ -19,3 +19,27 @@ export function estruturasComRotulo<T extends { codigo?: string | null; nome: st
     .sort(compararNome)
     .map((e) => ({ ...e, nome: rotuloEstrutura(e) }));
 }
+
+/**
+ * Deixa nos filtros só as macros e estruturas com pendência atual.
+ * `comPendencia` nulo (função do banco ainda não criada) mantém tudo.
+ * O que já está selecionado continua na lista, para poder ser desmarcado.
+ */
+export function soComPendencia<
+  M extends { id: string },
+  E extends { id: string; macro_estrutura_id: string },
+>(
+  macros: M[],
+  estruturas: E[],
+  comPendencia: { estrutura_id: string; macro_estrutura_id: string }[] | null,
+  selecionados: string[] = [],
+) {
+  if (!comPendencia) return { macros, estruturas };
+  const estruturaIds = new Set(comPendencia.map((c) => c.estrutura_id));
+  const macroIds = new Set(comPendencia.map((c) => c.macro_estrutura_id));
+  const manter = new Set(selecionados);
+  return {
+    macros: macros.filter((m) => macroIds.has(m.id) || manter.has(m.id)),
+    estruturas: estruturas.filter((e) => estruturaIds.has(e.id) || manter.has(e.id)),
+  };
+}

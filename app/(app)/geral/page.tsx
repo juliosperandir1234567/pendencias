@@ -7,7 +7,11 @@ import {
   parseTurnoGrupos,
 } from "@/lib/filters";
 import { formatNumber } from "@/lib/format";
-import { estruturasComRotulo, rotuloEstrutura } from "@/lib/estrutura";
+import {
+  estruturasComRotulo,
+  rotuloEstrutura,
+  soComPendencia,
+} from "@/lib/estrutura";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ChartCard } from "@/components/ui/chart-card";
 import {
@@ -58,6 +62,7 @@ export default async function GeralPage({
     { data: graficoMacroRaw },
     { data: graficoEstruturaRaw },
     { data: fluxoRaw, error: fluxoErro },
+    { data: comPendenciaRaw, error: comPendenciaErro },
   ] = await Promise.all([
     supabase.from("macro_estruturas").select("id, nome").order("nome"),
     supabase
@@ -96,10 +101,21 @@ export default async function GeralPage({
       p_qualis: qualis,
       p_turno_grupos: turnoGrupos,
     }),
+    // Gestor só enxerga Qualis = Sim; o filtro de Qualis do admin não mexe nas listas.
+    supabase.rpc("rpc_estruturas_com_pendencia", {
+      p_qualis: isAdmin ? undefined : true,
+    }),
   ]);
 
-  const macroEstruturas = macroEstruturasRaw ?? [];
-  const estruturas = estruturasComRotulo(estruturasRaw ?? []);
+  // Filtros mostram só macros/estruturas com pendência atual.
+  const opcoes = soComPendencia(
+    macroEstruturasRaw ?? [],
+    estruturasRaw ?? [],
+    comPendenciaErro ? null : (comPendenciaRaw ?? []),
+    [...macroIds, ...(estruturaIds ?? [])],
+  );
+  const macroEstruturas = opcoes.macros;
+  const estruturas = estruturasComRotulo(opcoes.estruturas);
   const codigoPorEstrutura = new Map(
     (estruturasRaw ?? []).map((e) => [e.id, e.codigo]),
   );

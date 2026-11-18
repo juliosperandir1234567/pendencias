@@ -818,6 +818,10 @@ export type Database = {
           total_treinamentos: number
         }[]
       }
+      rpc_estruturas_com_pendencia: {
+        Args: { p_qualis?: boolean }
+        Returns: { estrutura_id: string; macro_estrutura_id: string }[]
+      }
       rpc_fluxo_pendencias: {
         Args: {
           p_macro_ids?: string[]
