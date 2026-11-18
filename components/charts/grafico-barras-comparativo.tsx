@@ -26,10 +26,13 @@ interface GraficoBarrasComparativoProps {
 }
 
 export function GraficoBarrasComparativo({
-  dados,
+  dados: dadosBrutos,
   onBarClick,
   emptyMessage = "Sem dados para os filtros selecionados.",
 }: GraficoBarrasComparativoProps) {
+  // Itens zerados no início e no atual não ganham coluna vazia.
+  const dados = dadosBrutos.filter((d) => d.inicio > 0 || d.atual > 0);
+
   if (!dados.length) {
     return (
       <p className="py-10 text-center text-sm text-gray-400">{emptyMessage}</p>
@@ -45,7 +48,7 @@ export function GraficoBarrasComparativo({
 
   return (
     <div className="overflow-x-auto px-2">
-      <div style={{ height: 300, minWidth }}>
+      <div style={{ height: 260, minWidth }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={dados}
@@ -64,7 +67,7 @@ export function GraficoBarrasComparativo({
               textAnchor={largo ? "end" : "middle"}
               height={largo ? 86 : 24}
             />
-            <YAxis hide />
+            <YAxis hide domain={[0, "dataMax"]} />
             <Tooltip
               cursor={{ fill: "rgba(11,74,44,0.05)" }}
               // `name` chega como o nome da série ("Início"/"Atual"), não a chave.

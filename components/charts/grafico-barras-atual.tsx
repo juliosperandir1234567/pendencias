@@ -26,10 +26,13 @@ interface GraficoBarrasAtualProps {
 
 /** Uma barra por item, só com as pendências atuais. */
 export function GraficoBarrasAtual({
-  dados,
+  dados: dadosBrutos,
   onBarClick,
   emptyMessage = "Sem dados para os filtros selecionados.",
 }: GraficoBarrasAtualProps) {
+  // Macros sem pendência não ganham coluna vazia.
+  const dados = dadosBrutos.filter((d) => d.atual > 0);
+
   if (!dados.length) {
     return (
       <p className="py-10 text-center text-sm text-gray-400">{emptyMessage}</p>
@@ -41,7 +44,7 @@ export function GraficoBarrasAtual({
 
   return (
     <div className="overflow-x-auto px-2">
-      <div style={{ height: 280, minWidth }}>
+      <div style={{ height: 240, minWidth }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={dados}
@@ -59,7 +62,7 @@ export function GraficoBarrasAtual({
               textAnchor={largo ? "end" : "middle"}
               height={largo ? 86 : 24}
             />
-            <YAxis hide />
+            <YAxis hide domain={[0, "dataMax"]} />
             <Tooltip
               cursor={{ fill: "rgba(11,74,44,0.05)" }}
               formatter={(value) => [formatNumber(Number(value ?? 0)), "Atual"]}

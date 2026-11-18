@@ -83,7 +83,7 @@ export function GraficoEstruturaTurno({
               textAnchor={dados.length > 4 ? "end" : "middle"}
               height={dados.length > 4 ? 86 : 30}
             />
-            <YAxis hide type="number" allowDecimals={false} />
+            <YAxis hide type="number" allowDecimals={false} domain={[0, "dataMax"]} />
             <Tooltip
               formatter={(value, name) => [
                 formatNumber(Number(value ?? 0)),
