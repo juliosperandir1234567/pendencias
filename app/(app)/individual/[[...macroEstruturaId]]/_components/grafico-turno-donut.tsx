@@ -1,7 +1,7 @@
 "use client";
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, formatPercent } from "@/lib/format";
 import type { TurnoGrupoTotal } from "@/lib/transform";
 
 export function GraficoTurnoDonut({ dados }: { dados: TurnoGrupoTotal[] }) {
@@ -16,16 +16,16 @@ export function GraficoTurnoDonut({ dados }: { dados: TurnoGrupoTotal[] }) {
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative h-[120px] w-[120px] flex-shrink-0">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4">
+      <div className="relative h-[170px] w-[170px] flex-shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={dados}
               dataKey="total"
               nameKey="label"
-              innerRadius={34}
-              outerRadius={52}
+              innerRadius={54}
+              outerRadius={80}
               paddingAngle={2}
               strokeWidth={0}
             >
@@ -40,7 +40,7 @@ export function GraficoTurnoDonut({ dados }: { dados: TurnoGrupoTotal[] }) {
                     ?.label ?? "";
                 const numeric = Number(value ?? 0);
                 return [
-                  `${formatNumber(numeric)} (${((numeric / total) * 100).toFixed(1)}%)`,
+                  `${formatNumber(numeric)} (${formatPercent((numeric / total) * 100)})`,
                   label,
                 ];
               }}
@@ -53,22 +53,27 @@ export function GraficoTurnoDonut({ dados }: { dados: TurnoGrupoTotal[] }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-base font-bold text-brand-verde">
+          <span className="text-2xl font-bold leading-none text-brand-verde">
             {formatNumber(total)}
           </span>
-          <span className="text-[9px] text-gray-400">pendências</span>
+          <span className="mt-1 text-[10px] uppercase tracking-wide text-gray-400">
+            pendências
+          </span>
         </div>
       </div>
-      <ul className="flex-1 space-y-1.5 text-xs">
+      <ul className="w-full space-y-2 text-sm">
         {dados.map((d) => (
           <li key={d.key} className="flex items-center gap-2">
             <span
-              className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+              className="h-3 w-3 flex-shrink-0 rounded-full"
               style={{ backgroundColor: d.color }}
             />
             <span className="text-gray-600">{d.label}</span>
-            <span className="ml-auto font-medium text-gray-800">
+            <span className="ml-auto font-semibold tabular-nums text-gray-900">
               {formatNumber(d.total)}
+            </span>
+            <span className="w-12 text-right text-xs tabular-nums text-gray-400">
+              {formatPercent((d.total / total) * 100)}
             </span>
           </li>
         ))}

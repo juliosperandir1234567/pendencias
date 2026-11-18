@@ -14,6 +14,9 @@ import { TURNO_GRUPOS } from "@/lib/filters";
 import { formatNumber } from "@/lib/format";
 import type { EstruturaTurnoPivotado } from "@/lib/transform";
 
+// Âmbar puro fica claro demais como texto; o rótulo usa um tom mais escuro.
+const COR_ROTULO: Record<string, string> = { diurno_fixo: "#b45309" };
+
 export function GraficoEstruturaTurno({
   dados,
 }: {
@@ -26,6 +29,14 @@ export function GraficoEstruturaTurno({
       </p>
     );
   }
+
+  // Largura de cada estrutura cresce com o tamanho dos números, para os
+  // rótulos das três barras não se sobreporem.
+  const maior = Math.max(
+    ...dados.flatMap((d) => TURNO_GRUPOS.map((g) => Number(d[g.key]) || 0)),
+  );
+  const larguraRotulo = formatNumber(maior).length * 7.5 + 6;
+  const larguraGrupo = Math.max(90, Math.ceil(larguraRotulo * 3 + 24));
 
   return (
     <div>
@@ -43,15 +54,15 @@ export function GraficoEstruturaTurno({
       <div className="overflow-x-auto px-2">
         <div
           style={{
-            height: 210,
-            minWidth: dados.length > 6 ? dados.length * 90 : "100%",
+            height: 280,
+            minWidth: Math.max(dados.length * larguraGrupo, 320),
           }}
         >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={dados}
             margin={{
-              top: 16,
+              top: 24,
               right: 8,
               bottom: 4,
               left: 8,
@@ -85,14 +96,23 @@ export function GraficoEstruturaTurno({
               }}
             />
             {TURNO_GRUPOS.map((g) => (
-              <Bar key={g.key} dataKey={g.key} fill={g.color} radius={[4, 4, 0, 0]} maxBarSize={56}>
+              <Bar
+                key={g.key}
+                dataKey={g.key}
+                fill={g.color}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={56}
+                // Valores pequenos ao lado de grandes continuam visíveis.
+                minPointSize={(value) => (Number(value) > 0 ? 3 : 0)}
+              >
                 <LabelList
                   dataKey={g.key}
                   position="top"
                   formatter={(value) =>
                     Number(value ?? 0) > 0 ? formatNumber(Number(value)) : ""
                   }
-                  style={{ fontSize: 11, fill: "#374151" }}
+                  offset={6}
+                  style={{ fontSize: 12, fontWeight: 700, fill: COR_ROTULO[g.key] ?? g.color }}
                 />
               </Bar>
             ))}

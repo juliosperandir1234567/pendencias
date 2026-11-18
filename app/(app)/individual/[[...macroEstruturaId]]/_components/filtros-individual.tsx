@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { parseIdsParam, QUALIS_OPCOES, TURNO_GRUPOS } from "@/lib/filters";
+import { parseIdsParam, QUALIS_OPCOES } from "@/lib/filters";
 
 interface MacroEstruturaOption {
   id: string;
@@ -21,7 +21,7 @@ interface TreinamentoOption {
 }
 
 interface FiltrosIndividualProps {
-  macroEstruturaId?: string;
+  macroIds: string[];
   macroEstruturas: MacroEstruturaOption[];
   estruturas: EstruturaOption[];
   treinamentos: TreinamentoOption[];
@@ -29,7 +29,7 @@ interface FiltrosIndividualProps {
 }
 
 export function FiltrosIndividual({
-  macroEstruturaId,
+  macroIds,
   macroEstruturas,
   estruturas,
   treinamentos,
@@ -39,8 +39,8 @@ export function FiltrosIndividual({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  const basePath = macroEstruturaId
-    ? `/individual/${macroEstruturaId}`
+  const basePath = macroIds.length
+    ? `/individual/${macroIds.join(",")}`
     : "/individual";
 
   const lista = (chave: string) =>
@@ -48,7 +48,6 @@ export function FiltrosIndividual({
   const estrutura = lista("estrutura");
   const treinamento = lista("treinamento");
   const qualis = lista("qualis");
-  const turno = lista("turno");
 
   function update(patch: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -62,11 +61,13 @@ export function FiltrosIndividual({
     });
   }
 
-  function trocarMacro(novoId: string | undefined) {
+  function trocarMacros(novosIds: string[]) {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("estrutura");
     params.delete("page");
-    const destino = novoId ? `/individual/${novoId}` : "/individual";
+    const destino = novosIds.length
+      ? `/individual/${novosIds.join(",")}`
+      : "/individual";
     startTransition(() => {
       router.push(`${destino}?${params.toString()}`);
     });
@@ -79,13 +80,14 @@ export function FiltrosIndividual({
   }
 
   return (
-    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-4">
       <Field label="Estrutura Macro">
         <SearchableSelect
+          multiple
           placeholder="Todas as macro estruturas"
           options={macroEstruturas.map((m) => ({ value: m.id, label: m.nome }))}
-          value={macroEstruturaId ? [macroEstruturaId] : []}
-          onChange={(v) => trocarMacro(v[0])}
+          value={macroIds}
+          onChange={trocarMacros}
         />
       </Field>
       <Field label="Estrutura">
@@ -116,16 +118,7 @@ export function FiltrosIndividual({
           onChange={(v) => update({ qualis: v.join(",") || null })}
         />
       </Field>
-      <Field label="Turno">
-        <SearchableSelect
-          multiple
-          placeholder="Todos"
-          options={TURNO_GRUPOS.map((g) => ({ value: g.key, label: g.label }))}
-          value={turno}
-          onChange={(v) => update({ turno: v.join(",") || null })}
-        />
-      </Field>
-      <div className="col-span-2 flex items-center justify-between lg:col-span-5">
+      <div className="col-span-2 flex items-center justify-between lg:col-span-4">
         <span className="text-xs text-gray-400">
           {isPending ? "Atualizando…" : ""}
         </span>

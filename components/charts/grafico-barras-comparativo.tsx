@@ -37,7 +37,11 @@ export function GraficoBarrasComparativo({
   }
 
   const largo = dados.length > 8;
-  const minWidth = Math.max(dados.length * (largo ? 105 : 90), 320);
+  // Cada item cresce com o tamanho dos números, para os rótulos não se sobreporem.
+  const maior = Math.max(...dados.map((d) => Math.max(d.inicio, d.atual)));
+  const larguraRotulo = formatNumber(maior).length * 7 + 6;
+  const larguraItem = Math.max(largo ? 105 : 90, Math.ceil(larguraRotulo * 2 + 24));
+  const minWidth = Math.max(dados.length * larguraItem, 320);
 
   return (
     <div className="overflow-x-auto px-2">
@@ -45,7 +49,7 @@ export function GraficoBarrasComparativo({
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={dados}
-            margin={{ top: 22, right: 8, bottom: largo ? 24 : 8, left: 8 }}
+            margin={{ top: 26, right: 8, bottom: largo ? 24 : 8, left: 8 }}
             barGap={4}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f0" />
@@ -78,8 +82,9 @@ export function GraficoBarrasComparativo({
               <LabelList
                 dataKey="inicio"
                 position="top"
+                offset={6}
                 formatter={(value) => formatNumber(Number(value ?? 0))}
-                style={{ fontSize: 10, fill: "#374151" }}
+                style={{ fontSize: 11, fontWeight: 700, fill: "#1d4ed8" }}
               />
             </Bar>
             <Bar dataKey="atual" name="Atual" fill="#1e7a46" radius={[3, 3, 0, 0]} maxBarSize={32}
@@ -96,8 +101,9 @@ export function GraficoBarrasComparativo({
               <LabelList
                 dataKey="atual"
                 position="top"
+                offset={6}
                 formatter={(value) => formatNumber(Number(value ?? 0))}
-                style={{ fontSize: 10, fill: "#374151" }}
+                style={{ fontSize: 11, fontWeight: 700, fill: "#0b4a2c" }}
               />
             </Bar>
           </BarChart>

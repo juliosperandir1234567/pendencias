@@ -67,7 +67,9 @@ export async function GET(request: NextRequest) {
   const isAdmin = profile?.role === "administrador";
 
   const sp = request.nextUrl.searchParams;
-  const macroEstruturaId = sp.get("macro") || undefined;
+  // Uma ou várias macros: ?macro=<id>,<id>
+  const macroIds = parseIdsParam(sp.get("macro") ?? undefined);
+  const macroUnica = macroIds.length === 1 ? macroIds[0] : undefined;
   const estruturaIds = parseIdsParam(sp.get("estrutura") ?? undefined);
   const treinamentoIds = parseIdsParam(sp.get("treinamento") ?? undefined);
   const qualis = parseQualis(sp.get("qualis"), isAdmin);
@@ -87,23 +89,24 @@ export async function GET(request: NextRequest) {
     p_page_size: 50000,
   } as const;
 
-  // Só a macro escolhida, ou várias estruturas: separa o relatório por
-  // estrutura, em ordem de nome.
+  // Macro(s) escolhida(s), ou várias estruturas: separa o relatório por
+  // estrutura, em ordem de macro e depois de nome.
   const dividirPorEstrutura =
-    (!!macroEstruturaId && estruturaIds.length === 0) || estruturaIds.length > 1;
+    (macroIds.length > 0 && estruturaIds.length === 0) || estruturaIds.length > 1;
 
   const [
-    { data: macro },
+    { data: macrosEscolhidas },
     { data: estruturasEscolhidas },
     { data: treinamentosEscolhidos },
     { data: estruturasDaMacro },
     { data: config },
   ] = await Promise.all([
-    macroEstruturaId
-      ? supabase.from("macro_estruturas").select("nome").eq("id", macroEstruturaId).maybeSingle()
-      : Promise.resolve({ data: null }),
+    supabase.from("macro_estruturas").select("id, nome").order("nome"),
     estruturaIds.length
-      ? supabase.from("estruturas").select("id, codigo, nome").in("id", estruturaIds)
+      ? supabase
+          .from("estruturas")
+          .select("id, codigo, nome, macro_estrutura_id")
+          .in("id", estruturaIds)
       : Promise.resolve({ data: null }),
     treinamentoIds.length
       ? supabase.from("treinamentos").select("nome").in("id", treinamentoIds).order("nome")
@@ -111,8 +114,8 @@ export async function GET(request: NextRequest) {
     dividirPorEstrutura && estruturaIds.length === 0
       ? supabase
           .from("estruturas")
-          .select("id, codigo, nome")
-          .eq("macro_estrutura_id", macroEstruturaId!)
+          .select("id, codigo, nome, macro_estrutura_id")
+          .in("macro_estrutura_id", macroIds)
       : Promise.resolve({ data: null }),
     supabase
       .from("configuracoes_sistema")
@@ -132,25 +135,38 @@ export async function GET(request: NextRequest) {
       })),
     );
 
+  const nomeMacro = new Map((macrosEscolhidas ?? []).map((m) => [m.id, m.nome]));
+  const ordemMacro = new Map((macrosEscolhidas ?? []).map((m, i) => [m.id, i]));
+  const nomesMacrosEscolhidas = (macrosEscolhidas ?? [])
+    .filter((m) => macroIds.includes(m.id))
+    .map((m) => m.nome);
+
   let grupos: GrupoEstrutura[];
+  // Macro de cada grupo (mesma ordem de `grupos`), para nomear os PDFs do ZIP.
+  let macroDosGrupos: (string | null)[] = [];
   if (dividirPorEstrutura) {
     const lista = estruturasComRotulo(
       estruturaIds.length ? (estruturasEscolhidas ?? []) : (estruturasDaMacro ?? []),
+    ).sort(
+      (a, b) =>
+        (ordemMacro.get(a.macro_estrutura_id) ?? 0) -
+        (ordemMacro.get(b.macro_estrutura_id) ?? 0),
     );
     const resultados = await Promise.all(
       lista.map((e) =>
         supabase.rpc("rpc_tabela_detalhada", {
           ...tabelaArgs,
-          p_macro_estrutura_id: macroEstruturaId,
+          p_macro_estrutura_id: macroUnica,
           p_estrutura_ids: [e.id],
         }),
       ),
     );
     grupos = lista.map((e, i) => ({ estrutura: e.nome, linhas: mapear(resultados[i].data) }));
+    macroDosGrupos = lista.map((e) => nomeMacro.get(e.macro_estrutura_id) ?? null);
   } else {
     const { data: tabelaRows } = await supabase.rpc("rpc_tabela_detalhada", {
       ...tabelaArgs,
-      p_macro_estrutura_id: macroEstruturaId,
+      p_macro_estrutura_id: macroUnica,
       p_estrutura_ids: listaOuNada(estruturaIds),
     });
     grupos = [{ estrutura: null, linhas: mapear(tabelaRows) }];
@@ -176,7 +192,9 @@ export async function GET(request: NextRequest) {
     : null;
 
   const props = {
-    macroEstrutura: macro?.nome ?? "Todas",
+    macroEstrutura: nomesMacrosEscolhidas.length
+      ? resumirLista(nomesMacrosEscolhidas)
+      : "Todas",
     estrutura: estruturaLabel,
     treinamento: treinamentoLabel,
     qualis: qualis === true ? "Sim" : qualis === false ? "Não" : "Todos",
@@ -190,20 +208,25 @@ export async function GET(request: NextRequest) {
     turnoGruposFiltro: listaOuNada(turnoGrupos),
   };
 
-  // ZIP: um PDF por estrutura da macro escolhida.
+  // ZIP: um PDF por estrutura. Com várias macros, uma pasta por macro.
   if (sp.get("zip") === "1" && dividirPorEstrutura) {
     const arquivos: Record<string, Uint8Array> = {};
-    for (const grupo of grupos.filter((g) => g.linhas.length > 0)) {
+    const variasMacros = new Set(macroDosGrupos).size > 1;
+    for (const [i, grupo] of grupos.entries()) {
+      if (grupo.linhas.length === 0) continue;
+      const macroGrupo = macroDosGrupos[i] ?? props.macroEstrutura;
       const pdf = await renderToBuffer(
         RelatorioColaboradores({
           ...props,
+          macroEstrutura: macroGrupo,
           estrutura: grupo.estrutura ?? "Todas",
           totalCount: grupo.linhas.length,
           // Uma estrutura por arquivo: a faixa no topo fica redundante.
           grupos: [{ estrutura: null, linhas: grupo.linhas }],
         }),
       );
-      let nome = nomeArquivo(`${props.macroEstrutura} - ${grupo.estrutura}`);
+      const pasta = variasMacros ? `${nomeArquivo(macroGrupo)}/` : "";
+      let nome = pasta + nomeArquivo(`${macroGrupo} - ${grupo.estrutura}`);
       for (let n = 2; arquivos[`${nome}.pdf`]; n++) nome = `${nome} (${n})`;
       arquivos[`${nome}.pdf`] = new Uint8Array(pdf);
     }
@@ -214,7 +237,9 @@ export async function GET(request: NextRequest) {
       );
     }
     const zip = zipSync(arquivos, { level: 6 });
-    const nomeZip = encodeURIComponent(`${nomeArquivo(props.macroEstrutura)} - PDFs por estrutura.zip`);
+    const nomeZip = encodeURIComponent(
+      `${variasMacros ? "Macros" : nomeArquivo(props.macroEstrutura)} - PDFs por estrutura.zip`,
+    );
     return new NextResponse(zip, {
       headers: {
         "Content-Type": "application/zip",

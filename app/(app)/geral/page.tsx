@@ -20,7 +20,10 @@ import {
 import { LegendaInicioAtual } from "@/components/ui/legenda-inicio-atual";
 import { GraficoBarrasComparativo } from "@/components/charts/grafico-barras-comparativo";
 import { FiltrosGeral } from "./_components/filtros-geral";
-import { GraficoMacroClicavel } from "./_components/grafico-macro-clicavel";
+import {
+  GraficoMacroAtualClicavel,
+  GraficoMacroClicavel,
+} from "./_components/grafico-macro-clicavel";
 
 const TOP_ESTRUTURAS = 25;
 
@@ -205,7 +208,13 @@ export default async function GeralPage({
       </div>
 
       <div className="space-y-4">
-        <ChartCard title="Pendências por Macro Estrutura">
+        <ChartCard
+          title="Pendências Atuais por Macro Estrutura"
+          subtitle="Clique numa barra para ver o detalhamento"
+        >
+          <GraficoMacroAtualClicavel dados={dadosMacro} />
+        </ChartCard>
+        <ChartCard title="Pendências por Macro Estrutura" subtitle="Início x Atual">
           <LegendaInicioAtual />
           <GraficoMacroClicavel dados={dadosMacro} />
         </ChartCard>

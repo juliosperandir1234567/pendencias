@@ -1,12 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatNumber } from "@/lib/format";
 import { agruparPorTurno, pivotEstruturaTurno } from "@/lib/transform";
-import {
-  listaOuNada,
-  parseIdsParam,
-  parseQualis,
-  parseTurnoGrupos,
-} from "@/lib/filters";
+import { listaOuNada, parseIdsParam, parseQualis } from "@/lib/filters";
 import { estruturasComRotulo, rotuloEstrutura } from "@/lib/estrutura";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ChartCard } from "@/components/ui/chart-card";
@@ -34,11 +29,13 @@ type OrdemColuna = (typeof ORDER_WHITELIST)[number];
 
 const PAGE_SIZE = 20;
 
+/** Usado quando as macros escolhidas não têm estruturas: lista vazia não pode virar "todas". */
+const UUID_NENHUM = "00000000-0000-0000-0000-000000000000";
+
 interface SearchParamsIndividual {
   estrutura?: string;
   treinamento?: string;
   qualis?: string;
-  turno?: string;
   sort?: string;
   dir?: string;
   page?: string;
@@ -52,12 +49,15 @@ export default async function IndividualDetalhePage({
   searchParams: Promise<SearchParamsIndividual>;
 }) {
   const { macroEstruturaId: macroParam } = await params;
-  const macroEstruturaId = macroParam?.[0];
+  // Uma ou várias macros no caminho: /individual/<id> ou /individual/<id>,<id>.
+  const macroIds = parseIdsParam(
+    macroParam?.[0] ? decodeURIComponent(macroParam[0]) : undefined,
+  );
+  const macroUnica = macroIds.length === 1 ? macroIds[0] : undefined;
   const sp = await searchParams;
 
-  const estruturaIds = listaOuNada(parseIdsParam(sp.estrutura));
+  const estruturaIdsFiltro = listaOuNada(parseIdsParam(sp.estrutura));
   const treinamentoIds = listaOuNada(parseIdsParam(sp.treinamento));
-  const turnoGrupos = listaOuNada(parseTurnoGrupos(sp.turno));
   const sortBy: OrdemColuna = (ORDER_WHITELIST as readonly string[]).includes(
     sp.sort ?? "",
   )
@@ -79,48 +79,64 @@ export default async function IndividualDetalhePage({
   // Gestor só vê Qualis = Sim, travado (mesmo que tente forçar via URL).
   const qualis = parseQualis(sp.qualis, isAdmin);
 
+  const [{ data: macroEstruturasRaw }, { data: estruturasTodas }] =
+    await Promise.all([
+      supabase.from("macro_estruturas").select("id, nome").order("nome"),
+      supabase
+        .from("estruturas")
+        .select("id, codigo, nome, macro_estrutura_id")
+        .order("nome"),
+    ]);
+
+  const estruturasDoEscopo = macroIds.length
+    ? (estruturasTodas ?? []).filter((e) =>
+        macroIds.includes(e.macro_estrutura_id),
+      )
+    : (estruturasTodas ?? []);
+
+  // As funções do banco só aceitam uma macro; com várias, recebem a lista de
+  // estruturas dessas macros.
+  const estruturaIds =
+    estruturaIdsFiltro ??
+    (macroIds.length > 1
+      ? estruturasDoEscopo.length
+        ? estruturasDoEscopo.map((e) => e.id)
+        : [UUID_NENHUM]
+      : undefined);
+
   const [
-    { data: macroEstruturasRaw },
-    { data: estruturasTodas },
     { data: treinamentosRaw },
     { data: graficoMacroRaw },
     { data: turnoRows },
     { data: estruturaTurnoRows },
     { data: tabelaRows },
   ] = await Promise.all([
-    supabase.from("macro_estruturas").select("id, nome").order("nome"),
-    supabase
-      .from("estruturas")
-      .select("id, codigo, nome, macro_estrutura_id")
-      .order("nome"),
     supabase.rpc("rpc_treinamentos_por_estrutura", {
       p_estrutura_ids: estruturaIds,
     }),
     supabase.rpc("rpc_grafico_macro_estrutura", {
-      p_macro_ids: macroEstruturaId ? [macroEstruturaId] : undefined,
+      p_macro_ids: listaOuNada(macroIds),
       p_estrutura_ids: estruturaIds,
       p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
-      p_turno_grupos: turnoGrupos,
     }),
     supabase.rpc("rpc_pendencias_por_turno", {
-      p_macro_estrutura_id: macroEstruturaId,
+      p_macro_estrutura_id: macroUnica,
       p_estrutura_ids: estruturaIds,
       p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
     }),
     supabase.rpc("rpc_pendencias_por_estrutura_turno", {
-      p_macro_estrutura_id: macroEstruturaId,
+      p_macro_estrutura_id: macroUnica,
       p_estrutura_ids: estruturaIds,
       p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
     }),
     supabase.rpc("rpc_tabela_detalhada", {
-      p_macro_estrutura_id: macroEstruturaId,
+      p_macro_estrutura_id: macroUnica,
       p_estrutura_ids: estruturaIds,
       p_treinamento_ids: treinamentoIds,
       p_qualis: qualis,
-      p_turno_grupos: turnoGrupos,
       p_order_by: sortBy,
       p_order_dir: sortDir,
       p_page: page,
@@ -129,17 +145,17 @@ export default async function IndividualDetalhePage({
   ]);
 
   const macroEstruturas = macroEstruturasRaw ?? [];
-  const macro = macroEstruturaId
-    ? macroEstruturas.find((m) => m.id === macroEstruturaId)
-    : undefined;
-
-  const estruturas = estruturasComRotulo(
-    macroEstruturaId
-      ? (estruturasTodas ?? []).filter(
-          (e) => e.macro_estrutura_id === macroEstruturaId,
-        )
-      : (estruturasTodas ?? []),
+  const macrosEscolhidas = macroEstruturas.filter((m) =>
+    macroIds.includes(m.id),
   );
+  const titulo =
+    macrosEscolhidas.length === 0
+      ? "Todas as Macro Estruturas"
+      : macrosEscolhidas.length <= 2
+        ? macrosEscolhidas.map((m) => m.nome).join(" e ")
+        : `${macrosEscolhidas.length} Macro Estruturas`;
+
+  const estruturas = estruturasComRotulo(estruturasDoEscopo);
   const codigoPorEstrutura = new Map(
     (estruturasTodas ?? []).map((e) => [e.id, e.codigo]),
   );
@@ -161,45 +177,43 @@ export default async function IndividualDetalhePage({
     .slice()
     .sort((a, b) => b.total - a.total)[0];
 
+  const basePath = macroIds.length
+    ? `/individual/${macroIds.join(",")}`
+    : "/individual";
+
   function buildHref(patch: Record<string, string>) {
     const urlParams = new URLSearchParams();
     if (sp.estrutura) urlParams.set("estrutura", sp.estrutura);
     if (sp.treinamento) urlParams.set("treinamento", sp.treinamento);
     if (sp.qualis) urlParams.set("qualis", sp.qualis);
-    if (sp.turno) urlParams.set("turno", sp.turno);
     if (sp.sort) urlParams.set("sort", sp.sort);
     if (sp.dir) urlParams.set("dir", sp.dir);
     if (sp.page) urlParams.set("page", sp.page);
     for (const [key, value] of Object.entries(patch)) {
       urlParams.set(key, value);
     }
-    const base = macroEstruturaId
-      ? `/individual/${macroEstruturaId}`
-      : "/individual";
-    return `${base}?${urlParams.toString()}`;
+    return `${basePath}?${urlParams.toString()}`;
   }
 
   const pdfParams = new URLSearchParams();
-  if (macroEstruturaId) pdfParams.set("macro", macroEstruturaId);
+  if (macroIds.length) pdfParams.set("macro", macroIds.join(","));
   if (sp.estrutura) pdfParams.set("estrutura", sp.estrutura);
   if (sp.treinamento) pdfParams.set("treinamento", sp.treinamento);
   if (sp.qualis) pdfParams.set("qualis", sp.qualis);
-  if (sp.turno) pdfParams.set("turno", sp.turno);
   pdfParams.set("sort", sortBy);
   pdfParams.set("dir", sortDir);
   const pdfHref = `/individual/pdf?${pdfParams.toString()}`;
-  // Só a macro escolhida, ou várias estruturas: oferece um ZIP com um PDF por estrutura.
+  // Macro(s) escolhida(s), ou várias estruturas: oferece um ZIP com um PDF por estrutura.
   const zipHref =
-    (macroEstruturaId && !estruturaIds) || (estruturaIds?.length ?? 0) > 1
+    (macroIds.length > 0 && !estruturaIdsFiltro) ||
+    (estruturaIdsFiltro?.length ?? 0) > 1
       ? `/individual/pdf?${pdfParams.toString()}&zip=1`
       : null;
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-brand-verde">
-          {macro?.nome ?? "Todas as Macro Estruturas"}
-        </h2>
+        <h2 className="text-lg font-semibold text-brand-verde">{titulo}</h2>
         <p className="text-xs text-gray-500">
           Detalhamento de pendências de treinamento por colaborador.
         </p>
@@ -207,7 +221,7 @@ export default async function IndividualDetalhePage({
 
       <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
         <FiltrosIndividual
-          macroEstruturaId={macroEstruturaId}
+          macroIds={macroIds}
           macroEstruturas={macroEstruturas}
           estruturas={estruturas}
           treinamentos={treinamentosRaw ?? []}
@@ -236,7 +250,13 @@ export default async function IndividualDetalhePage({
           icon={<IconGraduationCap />}
         />
         <KpiCard
-          label={macroEstruturaId ? "Estruturas nesta Macro" : "Estruturas"}
+          label={
+            macroIds.length === 1
+              ? "Estruturas nesta Macro"
+              : macroIds.length > 1
+                ? "Estruturas nas Macros"
+                : "Estruturas"
+          }
           value={formatNumber(estruturas.length)}
           accent="azul"
           icon={<IconBuilding />}
@@ -258,11 +278,8 @@ export default async function IndividualDetalhePage({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_1fr]">
-        <ChartCard
-          title="Pendências por Turno"
-          subtitle="Distribuição do recorte atual"
-        >
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[280px_1fr]">
+        <ChartCard title="Pendências por Turno" className="flex flex-col">
           <GraficoTurnoDonut dados={dadosTurno} />
         </ChartCard>
         <ChartCard title="Pendências por Estrutura">
