@@ -94,7 +94,7 @@ export function SearchableSelect({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-sm shadow-sm transition hover:border-brand-verde-claro focus:border-brand-verde-claro focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+        className="flex w-full items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-left text-xs shadow-sm transition hover:border-brand-verde-claro focus:border-brand-verde-claro focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
       >
         <span
           className={

@@ -71,7 +71,7 @@ export function FiltrosNr({
   }
 
   return (
-    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-9">
+    <div className="filtros-barra">
       <div>
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
           Estrutura Macro
@@ -175,10 +175,7 @@ export function FiltrosNr({
           className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-verde-claro focus:outline-none"
         />
       </div>
-      <div className="col-span-2 flex items-center justify-between lg:col-span-9">
-        <span className="text-xs text-gray-400">
-          {isPending ? "Atualizando…" : ""}
-        </span>
+      <div className="filtros-acoes">
         <button
           type="button"
           onClick={limparFiltros}
@@ -186,6 +183,9 @@ export function FiltrosNr({
         >
           Limpar filtros
         </button>
+        <span className="text-xs text-gray-400">
+          {isPending ? "Atualizando…" : ""}
+        </span>
       </div>
     </div>
   );

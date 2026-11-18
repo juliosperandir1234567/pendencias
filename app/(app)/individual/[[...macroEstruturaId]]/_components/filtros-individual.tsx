@@ -80,7 +80,7 @@ export function FiltrosIndividual({
   }
 
   return (
-    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-4">
+    <div className="filtros-barra">
       <Field label="Estrutura Macro">
         <SearchableSelect
           multiple
@@ -118,10 +118,7 @@ export function FiltrosIndividual({
           onChange={(v) => update({ qualis: v.join(",") || null })}
         />
       </Field>
-      <div className="col-span-2 flex items-center justify-between lg:col-span-4">
-        <span className="text-xs text-gray-400">
-          {isPending ? "Atualizando…" : ""}
-        </span>
+      <div className="filtros-acoes">
         <button
           type="button"
           onClick={limparFiltros}
@@ -129,6 +126,9 @@ export function FiltrosIndividual({
         >
           Limpar filtros
         </button>
+        <span className="text-xs text-gray-400">
+          {isPending ? "Atualizando…" : ""}
+        </span>
       </div>
     </div>
   );

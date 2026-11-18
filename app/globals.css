@@ -5,3 +5,35 @@
   --color-brand-verde-claro: #1e7a46;
   --color-brand-azul: #2563eb;
 }
+
+/* Barra de filtros compacta: campos com largura fixa, lado a lado, sem esticar. */
+.filtros-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+}
+.filtros-barra > div {
+  width: 12rem;
+}
+.filtros-barra > .filtros-acoes {
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.4rem;
+}
+.filtros-barra label {
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+.filtros-barra select,
+.filtros-barra input {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.75rem;
+}
+@media (max-width: 639px) {
+  .filtros-barra > div {
+    width: calc(50% - 0.375rem);
+  }
+}

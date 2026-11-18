@@ -71,7 +71,7 @@ export function FiltrosGeral({
   }
 
   return (
-    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-5">
+    <div className="filtros-barra">
       <div>
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">
           Macro Estrutura
@@ -136,10 +136,7 @@ export function FiltrosGeral({
           onChange={(v) => updateParams({ turno: v })}
         />
       </div>
-      <div className="col-span-2 flex items-center justify-between lg:col-span-5">
-        <span className="text-xs text-gray-400">
-          {isPending ? "Atualizando…" : ""}
-        </span>
+      <div className="filtros-acoes">
         <button
           type="button"
           onClick={limparFiltros}
@@ -147,6 +144,9 @@ export function FiltrosGeral({
         >
           Limpar filtros
         </button>
+        <span className="text-xs text-gray-400">
+          {isPending ? "Atualizando…" : ""}
+        </span>
       </div>
     </div>
   );

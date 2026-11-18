@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/icons";
 import { DestaqueReducao } from "@/components/ui/destaque-reducao";
 import {
-  AlertaPioras,
   RankingPendencias,
   type ItemRanking,
 } from "@/components/charts/ranking-pendencias";
@@ -151,7 +150,7 @@ export default async function GeralPage({
         </p>
       </div>
 
-      <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
+      <div className="rounded-xl border border-gray-100 bg-white px-3 py-2.5 shadow-sm">
         <FiltrosGeral
           macroEstruturas={macroEstruturas}
           estruturas={estruturas}
@@ -214,14 +213,12 @@ export default async function GeralPage({
           title="Ranking por Macro Estrutura"
           subtitle="Clique para ver o detalhamento"
         >
-          <AlertaPioras itens={dadosMacro} rotulo="macro" />
           <RankingPendencias itens={dadosMacro} />
         </ChartCard>
         <ChartCard
           title={`Top ${TOP_ESTRUTURAS} Estruturas`}
           subtitle="Com mais pendências atuais"
         >
-          <AlertaPioras itens={dadosEstrutura} rotulo="estrutura" />
           <RankingPendencias itens={dadosEstrutura} limite={TOP_ESTRUTURAS} />
         </ChartCard>
       </div>

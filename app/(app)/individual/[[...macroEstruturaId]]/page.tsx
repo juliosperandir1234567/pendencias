@@ -228,7 +228,7 @@ export default async function IndividualDetalhePage({
         </p>
       </div>
 
-      <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
+      <div className="rounded-xl border border-gray-100 bg-white px-3 py-2.5 shadow-sm">
         <FiltrosIndividual
           macroIds={macroIds}
           macroEstruturas={macroEstruturas}

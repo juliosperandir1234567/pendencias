@@ -29,7 +29,8 @@ export function RankingPendencias({
   emptyMessage = "Sem pendências para os filtros selecionados.",
 }: RankingPendenciasProps) {
   const ordenados = itens
-    .filter((i) => i.inicio > 0 || i.atual > 0)
+    // Só quem ainda tem pendência atual.
+    .filter((i) => i.atual > 0)
     .sort((a, b) => b.atual - a.atual || b.inicio - a.inicio);
   const visiveis = limite ? ordenados.slice(0, limite) : ordenados;
 
@@ -144,37 +145,3 @@ function BadgeVariacao({ inicio, atual }: { inicio: number; atual: number }) {
   );
 }
 
-/** Faixa de alerta com quem tem mais pendências hoje do que no início. */
-export function AlertaPioras({
-  itens,
-  rotulo,
-  limite = 5,
-}: {
-  itens: ItemRanking[];
-  rotulo: string;
-  limite?: number;
-}) {
-  const pioras = itens
-    .filter((i) => i.atual > i.inicio)
-    .sort((a, b) => b.atual - b.inicio - (a.atual - a.inicio));
-  if (!pioras.length) return null;
-
-  const mostrados = pioras.slice(0, limite);
-  return (
-    <div className="mb-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-800">
-      <span className="font-semibold">
-        {pioras.length === 1
-          ? `1 ${rotulo} com mais pendências que no início:`
-          : `${pioras.length} ${rotulo}s com mais pendências que no início:`}
-      </span>{" "}
-      {mostrados.map((p, i) => (
-        <span key={p.id}>
-          {i > 0 && ", "}
-          {p.nome}{" "}
-          <span className="font-semibold">(+{formatNumber(p.atual - p.inicio)})</span>
-        </span>
-      ))}
-      {pioras.length > limite && ` e mais ${pioras.length - limite}`}
-    </div>
-  );
-}

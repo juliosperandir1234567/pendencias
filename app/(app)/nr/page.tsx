@@ -217,7 +217,7 @@ export default async function EspelhoNrPage({
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
+      <div className="rounded-xl border border-gray-100 bg-white px-3 py-2.5 shadow-sm">
         <FiltrosNr
           macroEstruturas={macroEstruturasRaw ?? []}
           estruturas={estruturasComRotulo(estruturasRaw ?? [])}
