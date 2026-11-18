@@ -40,7 +40,7 @@ export default async function AppLayout({
   return (
     <div className="min-h-[100dvh] overflow-x-hidden bg-gray-50">
       <header className="bg-brand-verde text-white shadow-sm">
-        <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-3 py-2.5 sm:px-6">
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-3 py-2.5 sm:px-6">
           <div className="flex items-center gap-2">
             <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10">
               {logoUrl ? (
@@ -78,7 +78,7 @@ export default async function AppLayout({
           </div>
         </div>
         <nav className="border-t border-white/10 bg-black/10">
-          <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-3 sm:px-6">
+          <div className="flex gap-1 overflow-x-auto px-3 sm:px-6">
             <NavLink href="/geral">Visão Geral</NavLink>
             <NavLink href="/individual">Visão Individual</NavLink>
             <NavLink href="/nr">Espelho de NR&apos;s</NavLink>
@@ -91,7 +91,7 @@ export default async function AppLayout({
           </div>
         </nav>
       </header>
-      <main className="mx-auto max-w-7xl p-3 sm:p-5">{children}</main>
+      <main className="p-3 sm:p-5">{children}</main>
     </div>
   );
 }
